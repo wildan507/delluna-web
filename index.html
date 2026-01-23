@@ -846,6 +846,7 @@ async function loadZones(){
   if(error) return alert("Gagal load zona: " + error.message);
   zones = data || [];
   renderSelectZona();
+  loadZonaByDaerah(); // <-- ini kunci biar langsung aktif
 }
 
 /* ========= LOAD MITRA (PAGINATION + FILTER STATUS) ========= */
@@ -1311,7 +1312,8 @@ function renderSelectMitraDaerah(){
   const sel = document.getElementById("mitraDaerah");
   sel.innerHTML = `<option value="">-- pilih daerah --</option>` +
     daerah.filter(d=>d.active).map(d => `<option value="${d.id}">${d.name}</option>`).join("");
-  renderSelectZona();
+
+  loadZonaByDaerah(); // <-- ini biar zona langsung refresh saat daerah ada default
 }
 
 function renderMitra(){
@@ -1501,9 +1503,16 @@ async function toggleVisitStatus(id, current){
 }
 
 async function resetVisitStatus(){
-  if(!confirm("Reset semua status kunjungan ke BELUM?")) return;
-  const { error } = await sb.from("partners").update({ visit_status:"belum" });
-  if(error) return alert(error.message);
+  if(!confirm("Reset semua status mitra ke 'Belum', Bos? ??")) return;
+
+  const { error } = await sb
+    .from("partners")
+    .update({ visit_status: "belum" })
+    .neq("visit_status", "belum");
+
+  if(error) return alert("Gagal reset status: " + error.message);
+
+  document.getElementById("filterVisit").value = "";
   loadMitra();
 }
 
