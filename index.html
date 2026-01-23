@@ -1,0 +1,1939 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tita • Akuntan Digital</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --gold:#d4af37;
+      --gold-soft:#f3e6b3;
+      --black:#0b0b0b;
+      --dark:#121212;
+      --card:#181818;
+      --border:#2a2a2a;
+      --text:#f5f5f5;
+      --muted:#b5b5b5;
+      --danger:#dc2626;
+      --success:#16a34a;
+      --info:#2563eb;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background:linear-gradient(135deg,#050505,#111);
+      color:var(--text);
+    }
+
+    header{
+      padding:16px 24px;
+      font-size:20px;
+      font-weight:700;
+      background:linear-gradient(90deg,#000,#111);
+      border-bottom:1px solid var(--border);
+      letter-spacing:.5px;
+      color:var(--gold);
+    }
+
+    nav{
+      display:flex;
+      gap:10px;
+      padding:12px 20px;
+      background:#0a0a0a;
+      border-bottom:1px solid var(--border);
+      flex-wrap:wrap;
+      position:relative;
+    }
+
+    nav button{
+      background:linear-gradient(180deg,#0f0f0f,#070707);
+      border:1px solid #2a2a2a;
+      color:#eee;
+      padding:8px 16px;
+      border-radius:14px;
+      cursor:pointer;
+      font-weight:600;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.05),
+                 0 6px 14px rgba(0,0,0,.5);
+      transition:.2s;
+    }
+
+    nav button:hover{
+      border-color:var(--gold);
+      color:var(--gold);
+      transform:translateY(-1px);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.08),
+                 0 10px 20px rgba(0,0,0,.7);
+    }
+
+    nav button.active{
+      background:linear-gradient(135deg,#e3c15a,#b8962e);
+      color:#111;
+      border:none;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.4),
+                 0 8px 20px rgba(212,175,55,.45);
+    }
+
+    .dropdown{
+      position:relative;
+      display:inline-block;
+    }
+
+    .dropdown-menu{
+      position:absolute;
+      top:110%;
+      left:0;
+      min-width:180px;
+      background:linear-gradient(180deg,#101010,#070707);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:8px;
+      display:none;
+      z-index:999;
+      box-shadow:0 20px 40px rgba(0,0,0,.8),
+                 inset 0 1px 0 rgba(255,255,255,.05);
+    }
+
+    .dropdown:hover .dropdown-menu{
+      display:block;
+    }
+
+    .dropdown-menu button{
+      width:100%;
+      text-align:left;
+      margin-bottom:6px;
+    }
+
+    .dropdown-menu button:last-child{
+      margin-bottom:0;
+    }
+
+    .container{padding:20px; max-width:1300px; margin:auto}
+    .hidden{display:none}
+
+    .grid{
+      display:grid;
+      gap:16px;
+    }
+
+    .grid-4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+    .grid-3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+    .grid-2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+
+    .card{
+      background:linear-gradient(180deg,#141414,#0f0f0f);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:18px 18px 16px;
+      box-shadow:0 16px 40px rgba(0,0,0,.5),
+                 inset 0 1px 0 rgba(255,255,255,.03);
+    }
+
+    .card h2, .card h3{
+      margin:0 0 10px;
+      font-weight:700;
+      letter-spacing:.3px;
+      color:var(--gold);
+    }
+
+    .card h3{font-size:16px}
+
+    .stat{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .stat .label{
+      font-size:13px;
+      color:var(--muted);
+      letter-spacing:.3px;
+    }
+
+    .stat .value{
+      font-size:22px;
+      font-weight:700;
+      color:var(--gold);
+    }
+
+    .row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      margin-bottom:10px;
+    }
+
+    input, select{
+      background:#0c0c0c;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:8px 10px;
+      color:var(--text);
+      outline:none;
+      min-width:120px;
+      box-shadow:inset 0 2px 4px rgba(0,0,0,.6);
+    }
+
+    input:focus, select:focus{
+      border-color:var(--gold);
+      box-shadow:0 0 0 1px rgba(212,175,55,.4),
+                 inset 0 2px 4px rgba(0,0,0,.6);
+    }
+
+    button{
+      border-radius:12px;
+      padding:8px 16px;
+      cursor:pointer;
+      font-weight:600;
+      border:1px solid #2a2a2a;
+      background:linear-gradient(180deg,#111,#060606);
+      color:#eee;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.05),
+                 0 6px 14px rgba(0,0,0,.6);
+      transition:.2s;
+    }
+
+    button:hover{
+      border-color:var(--gold);
+      color:var(--gold);
+      transform:translateY(-1px);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.08),
+                 0 10px 20px rgba(0,0,0,.7);
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg,#e3c15a,#b8962e);
+      border:none;
+      color:#111;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.4),
+                 0 10px 22px rgba(212,175,55,.5);
+    }
+
+    .btn-primary:hover{
+      filter:brightness(1.05);
+      color:#111;
+      transform:translateY(-1px);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.45),
+                 0 14px 28px rgba(212,175,55,.65);
+    }
+
+    .btn-danger{
+      background:linear-gradient(135deg,#5b1414,#2a0f0f);
+      border:1px solid #5b1b1b;
+      color:#ffd6d6;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.1),
+                 0 6px 14px rgba(0,0,0,.6);
+    }
+
+    .btn-danger:hover{
+      border-color:#dc2626;
+      color:#fff;
+      transform:translateY(-1px);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.15),
+                 0 10px 22px rgba(220,38,38,.4);
+    }
+
+    .btn-info{
+      background:linear-gradient(135deg,#1e3a8a,#0b1e4b);
+      border:1px solid #1e40af;
+      color:#dbeafe;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.1),
+                 0 6px 14px rgba(0,0,0,.6);
+    }
+
+    .btn-info:hover{
+      border-color:#3b82f6;
+      color:#fff;
+      transform:translateY(-1px);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.15),
+                 0 10px 22px rgba(59,130,246,.4);
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:10px;
+      font-size:14px;
+    }
+
+    th, td{
+      padding:10px 8px;
+      border-bottom:1px solid var(--border);
+      text-align:left;
+    }
+
+    th{
+      color:var(--muted);
+      font-weight:600;
+      letter-spacing:.3px;
+      font-size:12px;
+      text-transform:uppercase;
+    }
+
+    tbody tr:hover{
+      background:rgba(212,175,55,.05);
+    }
+
+    .right{text-align:right}
+    .center{text-align:center}
+
+    .pill{
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:600;
+      display:inline-block;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.15),
+                 0 3px 8px rgba(0,0,0,.5);
+    }
+
+    .pill-active{
+      background:linear-gradient(135deg,#14532d,#052e16);
+      color:#4ade80;
+      border:1px solid rgba(34,197,94,.4);
+    }
+
+    .pill-off{
+      background:linear-gradient(135deg,#7f1d1d,#3f0a0a);
+      color:#fecaca;
+      border:1px solid rgba(220,38,38,.4);
+    }
+
+    .pill-info{
+      background:linear-gradient(135deg,#1e3a8a,#0b1e4b);
+      color:#93c5fd;
+      border:1px solid rgba(59,130,246,.4);
+    }
+
+    .muted{color:var(--muted)}
+
+    .section-title{
+      font-size:15px;
+      font-weight:700;
+      margin:14px 0 6px;
+      color:var(--gold);
+      letter-spacing:.4px;
+    }
+
+    .divider{
+      height:1px;
+      background:linear-gradient(90deg,transparent,var(--border),transparent);
+      margin:14px 0;
+    }
+
+    .dist-box{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:linear-gradient(180deg,#101010,#080808);
+      margin-bottom:8px;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.04),
+                 0 6px 14px rgba(0,0,0,.6);
+    }
+
+    .dist-box .name{color:var(--text)}
+    .dist-box .value{color:var(--gold); font-weight:700}
+
+    .chart-wrap{
+      height:260px;
+    }
+
+    .footer-note{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:6px;
+    }
+
+    .badge{
+      font-size:11px;
+      padding:4px 8px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      color:var(--muted);
+      background:linear-gradient(180deg,#0f0f0f,#070707);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.05),
+                 0 3px 8px rgba(0,0,0,.5);
+    }
+
+    .link{
+      color:#60a5fa;
+      text-decoration:none;
+      font-weight:600;
+    }
+    .link:hover{text-decoration:underline}
+
+    .status-btn{
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      cursor:pointer;
+      border:1px solid;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.15),
+                 0 3px 8px rgba(0,0,0,.5);
+    }
+
+    .status-belum{
+      background:linear-gradient(135deg,#7f1d1d,#3f0a0a);
+      color:#fecaca;
+      border-color:rgba(220,38,38,.4);
+    }
+
+    .status-sudah{
+      background:linear-gradient(135deg,#14532d,#052e16);
+      color:#4ade80;
+      border-color:rgba(34,197,94,.4);
+    }
+  </style>
+</head>
+<body>
+
+<header>Tita • Akuntan Digital</header>
+
+<nav>
+  <button id="tab-dashboard" onclick="showTab('dashboard')">Dashboard</button>
+
+  <div class="dropdown">
+    <button id="tab-control">Control Panel</button>
+    <div class="dropdown-menu">
+      <button id="tab-produk" onclick="showTab('produk')">Produk</button>
+      <button id="tab-daerah" onclick="showTab('daerah')">Daerah</button>
+      <button id="tab-mitra" onclick="showTab('mitra')">Mitra</button>
+      <button id="tab-distribusi" onclick="showTab('distribusi')">Distribusi</button>
+    </div>
+  </div>
+
+  <button id="tab-input" onclick="showTab('input')">Input</button>
+  <button id="tab-laporan" onclick="showTab('laporan')">Laporan</button>
+</nav>
+
+<div class="container">
+
+  <!-- ================= DASHBOARD ================= -->
+  <div id="dashboardTab">
+    <div class="row">
+      <label>Daerah:</label>
+      <select id="dashboardDaerah" onchange="refreshDashboard()"></select>
+      <span class="badge">Ringkasan & chart mengikuti filter daerah</span>
+    </div>
+
+    <div class="grid grid-4">
+      <div class="card stat">
+        <div class="label">Produk Aktif</div>
+        <div class="value" id="dashProduk">0</div>
+      </div>
+      <div class="card stat">
+        <div class="label">Jumlah Mitra</div>
+        <div class="value" id="dashMitra">0</div>
+      </div>
+      <div class="card stat">
+        <div class="label">Transaksi Bulan Ini</div>
+        <div class="value" id="dashTransaksi">0</div>
+      </div>
+      <div class="card stat">
+        <div class="label">Omset Bulan Ini</div>
+        <div class="value" id="dashOmset">Rp 0</div>
+      </div>
+      <div class="card stat">
+        <div class="label">Margin Bulan Ini</div>
+        <div class="value" id="dashMargin">Rp 0</div>
+      </div>
+    </div>
+
+    <div class="grid grid-3" style="margin-top:16px;">
+      <div class="card">
+        <h3>Omset per Bulan (6 Bulan Terakhir)</h3>
+        <div class="chart-wrap">
+          <canvas id="chartOmset6"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Margin per Bulan (6 Bulan Terakhir)</h3>
+        <div class="chart-wrap">
+          <canvas id="chartMargin6"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Qty Terjual per Bulan (6 Bulan Terakhir)</h3>
+        <div class="chart-wrap">
+          <canvas id="chartQty6"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PRODUK ================= -->
+  <div id="produkTab" class="hidden">
+    <div class="card">
+      <h2>Master Produk</h2>
+
+      <div class="row">
+        <input id="namaProduk" placeholder="Nama produk">
+        <input id="hppProduk" type="number" placeholder="HPP">
+        <input id="hargaProduk" type="number" placeholder="Harga jual">
+        <button class="btn-primary" onclick="tambahProduk()">Simpan</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nama</th>
+            <th>HPP</th>
+            <th>Harga</th>
+            <th>Status</th>
+            <th class="center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="produkTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ================= DAERAH ================= -->
+  <div id="daerahTab" class="hidden">
+    <div class="card">
+      <h2>Master Daerah</h2>
+
+      <div class="row">
+        <input id="namaDaerah" placeholder="Nama daerah">
+        <button class="btn-primary" onclick="tambahDaerah()">Simpan</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nama</th>
+            <th>Status</th>
+            <th class="center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="daerahTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ================= MITRA ================= -->
+  <div id="mitraTab" class="hidden">
+    <div class="card">
+      <h2>Master Mitra</h2>
+
+      <div class="row">
+        <input id="kodeMitra" placeholder="Kode mitra">
+        <input id="namaMitra" placeholder="Nama mitra">
+        <input id="namaToko" placeholder="Nama toko">
+        <select id="mitraDaerah" onchange="loadZonaByDaerah()"></select>
+        <select id="mitraZona"></select>
+        <input id="kecamatanMitra" placeholder="Kecamatan">
+        <input id="mapsMitra" placeholder="Link Google Maps">
+        <button class="btn-primary" onclick="tambahMitra()">Simpan</button>
+      </div>
+
+      <div class="row">
+        <button class="btn-info" onclick="resetVisitStatus()">Reset Status Bulanan</button>
+        <span class="badge">Klik ? semua mitra kembali ke "Belum"</span>
+      </div>
+
+      <!-- FILTER STATUS MITRA -->
+      <div class="row">
+        <label>Status:</label>
+        <select id="filterVisit" onchange="loadMitra()">
+          <option value="">Semua</option>
+          <option value="sudah">Sudah</option>
+          <option value="belum">Belum</option>
+        </select>
+        <span class="badge">Filter cepat kunjungan</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Kode</th>
+            <th>Nama Mitra</th>
+            <th>Nama Toko</th>
+            <th>Daerah</th>
+            <th>Zona</th>
+            <th>Kecamatan</th>
+            <th>Maps</th>
+            <th>Status</th>
+            <th class="center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="mitraTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ================= DISTRIBUSI ================= -->
+  <div id="distribusiTab" class="hidden">
+    <div class="card">
+      <h2>Distribusi Margin</h2>
+
+      <div class="row">
+        <input id="namaPos" placeholder="Nama pos">
+        <input id="persenPos" type="number" step="0.1" placeholder="%">
+        <button class="btn-primary" onclick="tambahDistribusi()">Simpan</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nama</th>
+            <th>%</th>
+            <th>Status</th>
+            <th class="center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="distribusiTable"></tbody>
+      </table>
+
+      <div class="footer-note" id="totalPersen"></div>
+    </div>
+  </div>
+
+  <!-- ================= INPUT ================= -->
+  <div id="inputTab" class="hidden">
+    <div class="card">
+      <h2>Input Penjualan</h2>
+
+      <div class="row">
+        <label>Daerah:</label>
+        <select id="inputDaerah"></select>
+        <span class="badge">Wajib pilih daerah</span>
+      </div>
+
+      <div class="row">
+        <button class="btn-primary" onclick="tambahBaris()">+ Tambah Baris</button>
+        <span class="badge">Harga jual bisa diubah per transaksi</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Produk</th>
+            <th>Qty</th>
+            <th>Harga Jual</th>
+            <th class="right">Omset</th>
+            <th class="right">HPP</th>
+            <th class="right">Margin</th>
+            <th class="center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="inputTable"></tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <div class="grid grid-3">
+        <div class="card stat">
+          <div class="label">Total Omset</div>
+          <div class="value" id="sumOmset">Rp 0</div>
+        </div>
+        <div class="card stat">
+          <div class="label">Total HPP</div>
+          <div class="value" id="sumHPP">Rp 0</div>
+        </div>
+        <div class="card stat">
+          <div class="label">Total Margin</div>
+          <div class="value" id="sumMargin">Rp 0</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div>
+        <div class="section-title">Distribusi Margin (Realtime)</div>
+        <div id="distribusiResult"></div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <button class="btn-primary" onclick="simpanTransaksi()">?? Simpan Transaksi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= LAPORAN ================= -->
+  <div id="laporanTab" class="hidden">
+    <div class="card">
+      <h2>Laporan</h2>
+
+      <div class="row">
+        Dari:
+        <input type="date" id="filterFrom">
+        Sampai:
+        <input type="date" id="filterTo">
+        Produk:
+        <select id="filterProduk"></select>
+        Daerah:
+        <select id="filterDaerah"></select>
+        <button class="btn-primary" onclick="refreshLaporan()">Filter</button>
+        <button onclick="resetFilter()">Reset</button>
+        <button class="btn-danger" onclick="hapusSemuaTransaksi()">Hapus Semua Data</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="grid grid-3">
+        <div class="card stat">
+          <div class="label">Total Omset</div>
+          <div class="value" id="lapTotalOmset">Rp 0</div>
+        </div>
+        <div class="card stat">
+          <div class="label">Total HPP</div>
+          <div class="value" id="lapTotalHPP">Rp 0</div>
+        </div>
+        <div class="card stat">
+          <div class="label">Total Margin</div>
+          <div class="value" id="lapTotalMargin">Rp 0</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div>
+        <div class="section-title">Distribusi Total Margin</div>
+        <div id="lapDistribusi" class="grid grid-3"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div>
+        <div class="section-title">Rekap Per Produk</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Produk</th>
+              <th>Qty</th>
+              <th class="right">Omset</th>
+              <th class="right">HPP</th>
+              <th class="right">Margin</th>
+            </tr>
+          </thead>
+          <tbody id="lapProdukTable"></tbody>
+        </table>
+      </div>
+
+      <div class="divider"></div>
+
+      <div>
+        <div class="section-title">Detail Transaksi</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Daerah</th>
+              <th>Produk</th>
+              <th>Qty</th>
+              <th class="right">Harga</th>
+              <th class="right">Omset</th>
+              <th class="right">HPP</th>
+              <th class="right">Margin</th>
+            </tr>
+          </thead>
+          <tbody id="lapDetailTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ================= SUPABASE ================= */
+const SUPABASE_URL = "https://tujosbjitdmhobovkdgl.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1am9zYmppdGRtaG9ib3ZrZGdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1ODk4NTEsImV4cCI6MjA4NDE2NTg1MX0.i-gbPq_aCfLuLYtVidtKas4ZojiUgU2lKNy4Wp0IWSU";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ================= GLOBAL STATE ================= */
+let produk = [];
+let daerah = [];
+let mitra = [];
+let distribusi = [];
+let transaksiDraft = [];
+let zones = [];
+
+/* ================= UTIL ================= */
+function rupiah(n){
+  return "Rp " + (Number(n)||0).toLocaleString("id-ID");
+}
+
+function bulanIniISO(){
+  const d = new Date();
+  return d.toISOString().slice(0,7);
+}
+
+function isValidUUID(v){
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+}
+
+function safeEq(query, field, value){
+  if(value === null || value === undefined || value === "") return query;
+  return query.eq(field, value);
+}
+
+function getLast6Months(){
+  const res = [];
+  const d = new Date();
+  d.setDate(1);
+  for(let i=5;i>=0;i--){
+    const dt = new Date(d.getFullYear(), d.getMonth()-i, 1);
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth()+1).padStart(2,"0");
+    res.push({
+      key:`${y}-${m}`,
+      label: dt.toLocaleString("id-ID",{month:"short",year:"numeric"})
+    });
+  }
+  return res;
+}
+
+/* ================= TAB NAV ================= */
+function showTab(tab) {
+  const tabs = ["dashboard","produk","daerah","mitra","distribusi","input","laporan"];
+  tabs.forEach(t => {
+    document.getElementById(t+"Tab").classList.add("hidden");
+    const btn = document.getElementById("tab-"+t);
+    if(btn) btn.classList.remove("active");
+  });
+  document.getElementById(tab+"Tab").classList.remove("hidden");
+  const activeBtn = document.getElementById("tab-"+tab);
+  if(activeBtn) activeBtn.classList.add("active");
+
+  if (tab === "laporan") refreshLaporan();
+  if (tab === "dashboard") refreshDashboard();
+  if (tab === "input") renderInput();
+}
+
+/* ================= LOAD MASTER DATA ================= */
+async function loadProduk(){
+  const { data, error } = await sb
+    .from("products")
+    .select("*")
+    .order("created_at", { ascending:false });
+
+  if(error) return alert("Gagal load produk: " + error.message);
+  produk = data || [];
+  renderProduk();
+  renderFilterProduk();
+  renderInput();
+}
+
+async function loadDaerah(){
+  const { data, error } = await sb
+    .from("regions")
+    .select("*")
+    .order("created_at", { ascending:false });
+
+  if(error) return alert("Gagal load daerah: " + error.message);
+  daerah = data || [];
+  renderDaerah();
+}
+
+async function loadZones(){
+  const { data, error } = await sb
+    .from("zones")
+    .select("*, regions(name)")
+    .order("created_at");
+
+  if(error) return alert("Gagal load zona: " + error.message);
+  zones = data || [];
+  renderSelectZona();
+}
+
+/* ========= LOAD MITRA (PAGINATION + FILTER STATUS) ========= */
+async function loadMitra(){
+  const statusFilter = document.getElementById("filterVisit")?.value || "";
+
+  let allData = [];
+  let from = 0;
+  const limit = 1000;
+
+  while(true){
+    let query = sb
+      .from("partners")
+      .select("*, regions(name), zones(name)")
+      .order("created_at", { ascending:false })
+      .range(from, from + limit - 1);
+
+    if(statusFilter){
+      query = query.eq("visit_status", statusFilter);
+    }
+
+    const { data, error } = await query;
+    if(error) return alert("Gagal load mitra: " + error.message);
+
+    if(!data || data.length === 0) break;
+
+    allData = allData.concat(data);
+    if(data.length < limit) break;
+    from += limit;
+  }
+
+  mitra = allData;
+  renderMitra();
+}
+
+async function loadDistribusi(){
+  const { data, error } = await sb
+    .from("distributions")
+    .select("*")
+    .order("created_at");
+
+  if(error) return alert("Gagal load distribusi: " + error.message);
+  distribusi = data || [];
+  renderDistribusi();
+  renderDistribusiRealtime();
+}
+
+/* ================= DASHBOARD ================= */
+let chartOmset6 = null;
+let chartMargin6 = null;
+let chartQty6 = null;
+
+function renderDashboardFilterDaerah(){
+  const sel = document.getElementById("dashboardDaerah");
+  sel.innerHTML = `<option value="">Semua Daerah</option>` +
+    daerah.filter(d=>d.active).map(d => `<option value="${d.id}">${d.name}</option>`).join("");
+}
+
+async function refreshDashboard() {
+  const bulanKey = bulanIniISO();
+  const filterDaerah = document.getElementById("dashboardDaerah")?.value;
+
+  let query = sb
+    .from("transactions")
+    .select(`
+      id,
+      date,
+      total_omset,
+      total_margin,
+      transaction_items(qty)
+    `);
+
+  query = safeEq(query, "region_id", filterDaerah);
+
+  const { data, error } = await query;
+  if(error) return alert("Gagal load dashboard: " + error.message);
+
+  const transaksiBulan = (data||[]).filter(t => t.date?.startsWith(bulanKey));
+
+  const totalProduk = produk.filter(p => p.active).length;
+  const totalTransaksi = transaksiBulan.length;
+
+  let totalOmset = 0;
+  let totalMargin = 0;
+
+  transaksiBulan.forEach(t => {
+    totalOmset += Number(t.total_omset||0);
+    totalMargin += Number(t.total_margin||0);
+  });
+
+  const totalMitra = mitra.length;
+
+  document.getElementById("dashProduk").innerText = totalProduk;
+  document.getElementById("dashMitra").innerText = totalMitra;
+  document.getElementById("dashTransaksi").innerText = totalTransaksi;
+  document.getElementById("dashOmset").innerText = rupiah(totalOmset);
+  document.getElementById("dashMargin").innerText = rupiah(totalMargin);
+
+  renderDashboardCharts(data||[]);
+}
+
+function renderDashboardCharts(dataSource){
+  const months = getLast6Months();
+
+  const omsetArr = new Array(6).fill(0);
+  const marginArr = new Array(6).fill(0);
+  const qtyArr = new Array(6).fill(0);
+
+  dataSource.forEach(t => {
+    if(!t.date) return;
+    const idx = months.findIndex(m => t.date.startsWith(m.key));
+    if (idx === -1) return;
+
+    omsetArr[idx] += Number(t.total_omset||0);
+    marginArr[idx] += Number(t.total_margin||0);
+
+    (t.transaction_items||[]).forEach(i => {
+      qtyArr[idx] += Number(i.qty||0);
+    });
+  });
+
+  const labels = months.map(m => m.label);
+
+  renderChartOmset6(labels, omsetArr);
+  renderChartMargin6(labels, marginArr);
+  renderChartQty6(labels, qtyArr);
+}
+
+function renderChartOmset6(labels, data){
+  const ctx = document.getElementById("chartOmset6").getContext("2d");
+  if (chartOmset6) chartOmset6.destroy();
+
+  chartOmset6 = new Chart(ctx,{
+    type:"bar",
+    data:{
+      labels,
+      datasets:[{
+        label:"Omset",
+        data,
+        backgroundColor:"#d4af37"
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          callbacks:{
+            label: ctx => rupiah(ctx.parsed.y)
+          }
+        }
+      },
+      scales:{
+        y:{
+          beginAtZero:true,
+          ticks:{
+            color:"#f5f5f5",
+            callback:v=>rupiah(v)
+          }
+        },
+        x:{ticks:{color:"#f5f5f5"}}
+      }
+    }
+  });
+}
+
+function renderChartMargin6(labels, data){
+  const ctx = document.getElementById("chartMargin6").getContext("2d");
+  if (chartMargin6) chartMargin6.destroy();
+
+  chartMargin6 = new Chart(ctx,{
+    type:"bar",
+    data:{
+      labels,
+      datasets:[{
+        label:"Margin",
+        data,
+        backgroundColor:"#b8962e"
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          callbacks:{
+            label: ctx => rupiah(ctx.parsed.y)
+          }
+        }
+      },
+      scales:{
+        y:{
+          beginAtZero:true,
+          ticks:{
+            color:"#f5f5f5",
+            callback:v=>rupiah(v)
+          }
+        },
+        x:{ticks:{color:"#f5f5f5"}}
+      }
+    }
+  });
+}
+
+function renderChartQty6(labels, data){
+  const ctx = document.getElementById("chartQty6").getContext("2d");
+  if (chartQty6) chartQty6.destroy();
+
+  chartQty6 = new Chart(ctx,{
+    type:"bar",
+    data:{
+      labels,
+      datasets:[{
+        label:"Qty",
+        data,
+        backgroundColor:"#9ca3af"
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{
+          beginAtZero:true,
+          ticks:{color:"#f5f5f5"}
+        },
+        x:{ticks:{color:"#f5f5f5"}}
+      }
+    }
+  });
+}
+
+/* ================= PRODUK ================= */
+function renderProduk() {
+  const tbody = document.getElementById("produkTable");
+  tbody.innerHTML = "";
+
+  produk.forEach(p => {
+    const tr = document.createElement("tr");
+
+    if (p.edit) {
+      tr.innerHTML = `
+        <td>${p.name}</td>
+        <td><input type="number" value="${p.hpp}" id="edit-hpp-${p.id}"></td>
+        <td><input type="number" value="${p.price}" id="edit-price-${p.id}"></td>
+        <td>${p.active ? `<span class="pill pill-active">Aktif</span>` : `<span class="pill pill-off">Nonaktif</span>`}</td>
+        <td class="center">
+          <button onclick="simpanEditProduk('${p.id}')">Simpan</button>
+          <button onclick="batalEditProduk('${p.id}')">Batal</button>
+        </td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td>${p.name}</td>
+        <td>${rupiah(p.hpp)}</td>
+        <td>${rupiah(p.price)}</td>
+        <td>${p.active ? `<span class="pill pill-active">Aktif</span>` : `<span class="pill pill-off">Nonaktif</span>`}</td>
+        <td class="center">
+          <button onclick="editProduk('${p.id}')">Edit</button>
+          <button onclick="toggleProduk('${p.id}')">${p.active ? "Nonaktifkan" : "Aktifkan"}</button>
+          <button class="btn-danger" onclick="hapusProduk('${p.id}')">Hapus</button>
+        </td>
+      `;
+    }
+
+    tbody.appendChild(tr);
+  });
+}
+
+async function tambahProduk() {
+  const nama = document.getElementById("namaProduk").value.trim();
+  const hpp = Number(document.getElementById("hppProduk").value);
+  const price = Number(document.getElementById("hargaProduk").value);
+
+  if (!nama || !hpp || !price) return alert("Isi nama, HPP & harga dulu Bos ??");
+
+  const { error } = await sb.from("products").insert({
+    name: nama,
+    hpp,
+    price,
+    active: true
+  });
+
+  if(error) return alert("Gagal simpan produk: " + error.message);
+
+  document.getElementById("namaProduk").value = "";
+  document.getElementById("hppProduk").value = "";
+  document.getElementById("hargaProduk").value = "";
+
+  loadProduk();
+}
+
+async function toggleProduk(id) {
+  if(!isValidUUID(id)) return;
+  const p = produk.find(x => x.id === id);
+  const { error } = await sb
+    .from("products")
+    .update({ active: !p.active })
+    .eq("id", id);
+
+  if(error) return alert(error.message);
+  loadProduk();
+}
+
+function editProduk(id) {
+  produk.forEach(p => p.edit = false);
+  const p = produk.find(x => x.id === id);
+  p.edit = true;
+  renderProduk();
+}
+
+async function simpanEditProduk(id) {
+  if(!isValidUUID(id)) return;
+  const hpp = Number(document.getElementById(`edit-hpp-${id}`).value);
+  const price = Number(document.getElementById(`edit-price-${id}`).value);
+
+  const { error } = await sb
+    .from("products")
+    .update({ hpp, price })
+    .eq("id", id);
+
+  if(error) return alert(error.message);
+  loadProduk();
+}
+
+function batalEditProduk(id) {
+  const p = produk.find(x => x.id === id);
+  p.edit = false;
+  renderProduk();
+}
+
+async function hapusProduk(id) {
+  if(!isValidUUID(id)) return alert("ID produk invalid");
+  if (!confirm("Yakin mau hapus produk ini, Bos? ??")) return;
+  const { error } = await sb.from("products").delete().eq("id", id);
+  if(error) return alert(error.message);
+  loadProduk();
+}
+
+/* ================= DAERAH ================= */
+function renderDaerah(){
+  const tbody = document.getElementById("daerahTable");
+  tbody.innerHTML = "";
+
+  daerah.forEach(d => {
+    const tr = document.createElement("tr");
+
+    if (d.edit) {
+      tr.innerHTML = `
+        <td><input value="${d.name}" id="edit-daerah-${d.id}"></td>
+        <td>${d.active ? `<span class="pill pill-active">Aktif</span>` : `<span class="pill pill-off">Nonaktif</span>`}</td>
+        <td class="center">
+          <button onclick="simpanEditDaerah('${d.id}')">Simpan</button>
+          <button onclick="batalEditDaerah('${d.id}')">Batal</button>
+        </td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td>${d.name}</td>
+        <td>${d.active ? `<span class="pill pill-active">Aktif</span>` : `<span class="pill pill-off">Nonaktif</span>`}</td>
+        <td class="center">
+          <button onclick="editDaerah('${d.id}')">Edit</button>
+          <button onclick="toggleDaerah('${d.id}')">${d.active ? "Nonaktifkan" : "Aktifkan"}</button>
+          <button class="btn-danger" onclick="hapusDaerah('${d.id}')">Hapus</button>
+        </td>
+      `;
+    }
+
+    tbody.appendChild(tr);
+  });
+
+  renderSelectDaerah();
+  renderDashboardFilterDaerah();
+  renderSelectMitraDaerah();
+}
+
+async function tambahDaerah(){
+  const nama = document.getElementById("namaDaerah").value.trim();
+  if (!nama) return alert("Isi nama daerah dulu Bos ??");
+
+  const { error } = await sb.from("regions").insert({
+    name: nama,
+    active: true
+  });
+
+  if(error) return alert(error.message);
+
+  document.getElementById("namaDaerah").value = "";
+  loadDaerah();
+}
+
+function editDaerah(id){
+  daerah.forEach(d => d.edit = false);
+  const d = daerah.find(x => x.id === id);
+  d.edit = true;
+  renderDaerah();
+}
+
+async function simpanEditDaerah(id){
+  if(!isValidUUID(id)) return;
+  const name = document.getElementById(`edit-daerah-${id}`).value.trim();
+  const { error } = await sb
+    .from("regions")
+    .update({ name })
+    .eq("id", id);
+
+  if(error) return alert(error.message);
+  loadDaerah();
+}
+
+function batalEditDaerah(id){
+  const d = daerah.find(x => x.id === id);
+  d.edit = false;
+  renderDaerah();
+}
+
+async function toggleDaerah(id){
+  if(!isValidUUID(id)) return;
+  const d = daerah.find(x => x.id === id);
+  const { error } = await sb
+    .from("regions")
+    .update({ active: !d.active })
+    .eq("id", id);
+
+  if(error) return alert(error.message);
+  loadDaerah();
+}
+
+async function hapusDaerah(id){
+  if(!isValidUUID(id)) return alert("ID daerah invalid");
+  if (!confirm("Yakin mau hapus daerah ini, Bos? ??")) return;
+  const { error } = await sb.from("regions").delete().eq("id", id);
+  if(error) return alert(error.message);
+  loadDaerah();
+}
+
+/* ================= ZONA ================= */
+function renderSelectZona(){
+  const sel = document.getElementById("mitraZona");
+  sel.innerHTML = `<option value="">-- pilih zona --</option>`;
+}
+
+function loadZonaByDaerah(){
+  const regionId = document.getElementById("mitraDaerah").value;
+  const sel = document.getElementById("mitraZona");
+
+  const list = zones.filter(z => z.region_id === regionId);
+
+  sel.innerHTML = `<option value="">-- pilih zona --</option>` +
+    list.map(z => `<option value="${z.id}">${z.name}</option>`).join("");
+}
+
+/* ================= MITRA ================= */
+function renderSelectMitraDaerah(){
+  const sel = document.getElementById("mitraDaerah");
+  sel.innerHTML = `<option value="">-- pilih daerah --</option>` +
+    daerah.filter(d=>d.active).map(d => `<option value="${d.id}">${d.name}</option>`).join("");
+}
+
+function renderMitra(){
+  const tbody = document.getElementById("mitraTable");
+  tbody.innerHTML = "";
+
+  mitra.forEach(m => {
+    const namaDaerah = m.regions?.name || "-";
+    const namaZona = m.zones?.name || "-";
+    const mapsLink = m.maps_url ? `<a href="${m.maps_url}" target="_blank" class="link">Maps</a>` : "-";
+
+    const statusBtn = `
+      <span class="status-btn ${m.visit_status === 'sudah' ? 'status-sudah' : 'status-belum'}"
+        onclick="toggleVisitStatus('${m.id}','${m.visit_status}')">
+        ${m.visit_status === 'sudah' ? 'Sudah' : 'Belum'}
+      </span>
+    `;
+
+    const tr = document.createElement("tr");
+
+    if (m.edit) {
+      tr.innerHTML = `
+        <td><input value="${m.code}" id="edit-kode-${m.id}"></td>
+        <td><input value="${m.name}" id="edit-nama-${m.id}"></td>
+        <td><input value="${m.shop_name||''}" id="edit-toko-${m.id}"></td>
+        <td>
+          <select id="edit-daerah-mitra-${m.id}" onchange="loadZonaEdit('${m.id}')">
+            ${daerah.filter(d=>d.active).map(d=>`
+              <option value="${d.id}" ${d.id===m.region_id?"selected":""}>${d.name}</option>
+            `).join("")}
+          </select>
+        </td>
+        <td>
+          <select id="edit-zona-mitra-${m.id}"></select>
+        </td>
+        <td><input value="${m.district||''}" id="edit-kecamatan-${m.id}"></td>
+        <td><input value="${m.maps_url||''}" id="edit-maps-${m.id}"></td>
+        <td>${statusBtn}</td>
+        <td class="center">
+          <button onclick="simpanEditMitra('${m.id}')">Simpan</button>
+          <button onclick="batalEditMitra('${m.id}')">Batal</button>
+        </td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td>${m.code}</td>
+        <td>${m.name}</td>
+        <td>${m.shop_name||'-'}</td>
+        <td>${namaDaerah}</td>
+        <td>${namaZona}</td>
+        <td>${m.district||'-'}</td>
+        <td>${mapsLink}</td>
+        <td>${statusBtn}</td>
+        <td class="center">
+          <button onclick="editMitra('${m.id}')">Edit</button>
+          <button onclick="toggleMitra('${m.id}')">${m.active ? "Nonaktifkan" : "Aktifkan"}</button>
+          <button class="btn-danger" onclick="hapusMitra('${m.id}')">Hapus</button>
+        </td>
+      `;
+    }
+
+    tbody.appendChild(tr);
+
+    if(m.edit){
+      loadZonaEdit(m.id, m.zone_id);
+    }
+  });
+}
+
+function loadZonaEdit(mitraId, selectedZoneId=null){
+  const regionId = document.getElementById(`edit-daerah-mitra-${mitraId}`).value;
+  const sel = document.getElementById(`edit-zona-mitra-${mitraId}`);
+  const list = zones.filter(z => z.region_id === regionId);
+
+  sel.innerHTML = `<option value="">-- pilih zona --</option>` +
+    list.map(z => `
+      <option value="${z.id}" ${z.id===selectedZoneId?"selected":""}>${z.name}</option>
+    `).join("");
+}
+
+async function tambahMitra(){
+  const code = document.getElementById("kodeMitra").value.trim();
+  const name = document.getElementById("namaMitra").value.trim();
+  const shop = document.getElementById("namaToko").value.trim();
+  const region_id = document.getElementById("mitraDaerah").value;
+  const zone_id = document.getElementById("mitraZona").value;
+  const district = document.getElementById("kecamatanMitra").value.trim();
+  const maps_url = document.getElementById("mapsMitra").value.trim();
+
+  if(!code || !name || !region_id) return alert("Kode, nama & daerah wajib diisi Bos ??");
+
+  const { error } = await sb.from("partners").insert({
+    code,
+    name,
+    shop_name: shop,
+    region_id,
+    zone_id: zone_id || null,
+    district,
+    maps_url,
+    visit_status: "belum",
+    active: true
+  });
+
+  if(error) return alert("Gagal simpan mitra: " + error.message);
+
+  ["kodeMitra","namaMitra","namaToko","kecamatanMitra","mapsMitra"].forEach(id=>{
+    document.getElementById(id).value="";
+  });
+  document.getElementById("mitraDaerah").value="";
+  document.getElementById("mitraZona").innerHTML = `<option value="">-- pilih zona --</option>`;
+
+  loadMitra();
+}
+
+function editMitra(id){
+  mitra.forEach(m => m.edit = false);
+  const m = mitra.find(x => x.id === id);
+  m.edit = true;
+  renderMitra();
+}
+
+async function simpanEditMitra(id){
+  if(!isValidUUID(id)) return;
+
+  const code = document.getElementById(`edit-kode-${id}`).value.trim();
+  const name = document.getElementById(`edit-nama-${id}`).value.trim();
+  const shop = document.getElementById(`edit-toko-${id}`).value.trim();
+  const region_id = document.getElementById(`edit-daerah-mitra-${id}`).value;
+  const zone_id = document.getElementById(`edit-zona-mitra-${id}`).value;
+  const district = document.getElementById(`edit-kecamatan-${id}`).value.trim();
+  const maps_url = document.getElementById(`edit-maps-${id}`).value.trim();
+
+  const { error } = await sb
+    .from("partners")
+    .update({
+      code,
+      name,
+      shop_name: shop,
+      region_id,
+      zone_id: zone_id || null,
+      district,
+      maps_url
+    })
+    .eq("id", id);
+
+  if(error) return alert("Gagal update mitra: " + error.message);
+  loadMitra();
+}
+
+function batalEditMitra(id){
+  const m = mitra.find(x => x.id === id);
+  m.edit = false;
+  renderMitra();
+}
+
+async function toggleMitra(id){
+  if(!isValidUUID(id)) return;
+  const m = mitra.find(x => x.id === id);
+  const { error } = await sb
+    .from("partners")
+    .update({ active: !m.active })
+    .eq("id", id);
+
+  if(error) return alert(error.message);
+  loadMitra();
+}
+
+async function hapusMitra(id){
+  if(!isValidUUID(id)) return alert("ID mitra invalid");
+  if (!confirm("Yakin mau hapus mitra ini, Bos? ??")) return;
+  const { error } = await sb.from("partners").delete().eq("id", id);
+  if(error) return alert(error.message);
+  loadMitra();
+}
+
+/* ====== STATUS KUNJUNGAN ====== */
+async function toggleVisitStatus(id, current){
+  if(!isValidUUID(id)) return;
+  const next = current === "sudah" ? "belum" : "sudah";
+  const { error } = await sb
+    .from("partners")
+    .update({ visit_status: next })
+    .eq("id", id);
+
+  if(error) return alert(error.message);
+  loadMitra();
+}
+
+async function resetVisitStatus(){
+  if(!confirm("Reset semua status mitra ke 'Belum', Bos? ??")) return;
+
+  const { error } = await sb
+    .from("partners")
+    .update({ visit_status: "belum" })
+    .not("id","is",null);   // ? WHERE dummy biar Supabase nggak error
+
+  if(error) return alert("Gagal reset status: " + error.message);
+  loadMitra();
+}
+
+/* ================= DISTRIBUSI ================= */
+function renderDistribusi(){
+  const tbody = document.getElementById("distribusiTable");
+  tbody.innerHTML = "";
+
+  distribusi.forEach(d => {
+    const tr = document.createElement("tr");
+
+    if (d.edit) {
+      tr.innerHTML = `
+        <td><input value="${d.name}" id="edit-pos-${d.id}"></td>
+        <td><input type="number" step="0.1" value="${d.percent}" id="edit-persen-${d.id}"></td>
+        <td>${d.active ? `<span class="pill pill-active">Aktif</span>` : `<span class="pill pill-off">Nonaktif</span>`}</td>
+        <td class="center">
+          <button onclick="simpanEditDistribusi('${d.id}')">Simpan</button>
+          <button onclick="batalEditDistribusi('${d.id}')">Batal</button>
+        </td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td>${d.name}</td>
+        <td>${d.percent}%</td>
+        <td>${d.active ? `<span class="pill pill-active">Aktif</span>` : `<span class="pill pill-off">Nonaktif</span>`}</td>
+        <td class="center">
+          <button onclick="editDistribusi('${d.id}')">Edit</button>
+          <button onclick="toggleDistribusi('${d.id}')">${d.active ? "Nonaktifkan" : "Aktifkan"}</button>
+          <button class="btn-danger" onclick="hapusDistribusi('${d.id}')">Hapus</button>
+        </td>
+      `;
+    }
+
+    tbody.appendChild(tr);
+  });
+
+  const total = distribusi.filter(d=>d.active).reduce((a,b)=>a+Number(b.percent||0),0);
+  document.getElementById("totalPersen").innerText = `Total aktif: ${total}%`;
+}
+
+async function tambahDistribusi(){
+  const name = document.getElementById("namaPos").value.trim();
+  const percent = Number(document.getElementById("persenPos").value);
+
+  if(!name || !percent) return alert("Isi nama & persen dulu Bos ??");
+
+  const { error } = await sb.from("distributions").insert({
+    name,
+    percent,
+    active:true
+  });
+
+  if(error) return alert("Gagal simpan distribusi: " + error.message);
+
+  document.getElementById("namaPos").value="";
+  document.getElementById("persenPos").value="";
+  loadDistribusi();
+}
+
+function editDistribusi(id){
+  distribusi.forEach(d => d.edit = false);
+  const d = distribusi.find(x => x.id === id);
+  d.edit = true;
+  renderDistribusi();
+}
+
+async function simpanEditDistribusi(id){
+  if(!isValidUUID(id)) return;
+  const name = document.getElementById(`edit-pos-${id}`).value.trim();
+  const percent = Number(document.getElementById(`edit-persen-${id}`).value);
+
+  const { error } = await sb
+    .from("distributions")
+    .update({ name, percent })
+    .eq("id", id);
+
+  if(error) return alert("Gagal update distribusi: " + error.message);
+  loadDistribusi();
+}
+
+function batalEditDistribusi(id){
+  const d = distribusi.find(x => x.id === id);
+  d.edit = false;
+  renderDistribusi();
+}
+
+async function toggleDistribusi(id){
+  if(!isValidUUID(id)) return;
+  const d = distribusi.find(x => x.id === id);
+  const { error } = await sb
+    .from("distributions")
+    .update({ active: !d.active })
+    .eq("id", id);
+
+  if(error) return alert(error.message);
+  loadDistribusi();
+}
+
+async function hapusDistribusi(id){
+  if(!isValidUUID(id)) return alert("ID distribusi invalid");
+  if (!confirm("Yakin mau hapus pos distribusi ini, Bos? ??")) return;
+  const { error } = await sb.from("distributions").delete().eq("id", id);
+  if(error) return alert(error.message);
+  loadDistribusi();
+}
+
+/* ================= INPUT TRANSAKSI ================= */
+function renderSelectDaerah(){
+  const sel = document.getElementById("inputDaerah");
+  const selFilter = document.getElementById("filterDaerah");
+
+  const opts = `<option value="">Semua Daerah</option>` +
+    daerah.filter(d=>d.active).map(d => `<option value="${d.id}">${d.name}</option>`).join("");
+
+  if(sel) sel.innerHTML = `<option value="">-- pilih daerah --</option>` +
+    daerah.filter(d=>d.active).map(d => `<option value="${d.id}">${d.name}</option>`).join("");
+
+  if(selFilter) selFilter.innerHTML = opts;
+}
+
+function renderFilterProduk(){
+  const sel = document.getElementById("filterProduk");
+  sel.innerHTML = `<option value="">Semua Produk</option>` +
+    produk.filter(p=>p.active).map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+}
+
+function tambahBaris(){
+  transaksiDraft.push({
+    product_id:"",
+    qty:1,
+    price:0,
+    hpp:0,
+    margin:0,
+    omset:0
+  });
+  renderInput();
+}
+
+function renderInput(){
+  const tbody = document.getElementById("inputTable");
+  tbody.innerHTML = "";
+
+  transaksiDraft.forEach((row,idx)=>{
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>
+        <select onchange="onChangeProduk(${idx}, this.value)">
+          <option value="">-- pilih produk --</option>
+          ${produk.filter(p=>p.active).map(p=>`
+            <option value="${p.id}" ${p.id===row.product_id?"selected":""}>${p.name}</option>
+          `).join("")}
+        </select>
+      </td>
+      <td><input type="number" min="1" value="${row.qty}" onchange="onChangeQty(${idx}, this.value)"></td>
+      <td><input type="number" value="${row.price}" onchange="onChangePrice(${idx}, this.value)"></td>
+      <td class="right">${rupiah(row.omset)}</td>
+      <td class="right">${rupiah(row.hpp)}</td>
+      <td class="right">${rupiah(row.margin)}</td>
+      <td class="center"><button class="btn-danger" onclick="hapusBaris(${idx})">X</button></td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+
+  hitungTotalDraft();
+  renderDistribusiRealtime();
+}
+
+function onChangeProduk(idx, productId){
+  const p = produk.find(x => x.id === productId);
+  transaksiDraft[idx].product_id = productId;
+  transaksiDraft[idx].price = p ? Number(p.price||0) : 0;
+  transaksiDraft[idx].hpp = p ? Number(p.hpp||0) : 0;
+  hitungBaris(idx);
+}
+
+function onChangeQty(idx, val){
+  transaksiDraft[idx].qty = Number(val||0);
+  hitungBaris(idx);
+}
+
+function onChangePrice(idx, val){
+  transaksiDraft[idx].price = Number(val||0);
+  hitungBaris(idx);
+}
+
+function hitungBaris(idx){
+  const r = transaksiDraft[idx];
+  r.omset = r.qty * r.price;
+  r.hpp = r.qty * (r.hpp || 0);
+  r.margin = r.omset - r.hpp;
+  renderInput();
+}
+
+function hapusBaris(idx){
+  transaksiDraft.splice(idx,1);
+  renderInput();
+}
+
+function hitungTotalDraft(){
+  let omset=0, hpp=0, margin=0;
+  transaksiDraft.forEach(r=>{
+    omset+=Number(r.omset||0);
+    hpp+=Number(r.hpp||0);
+    margin+=Number(r.margin||0);
+  });
+  document.getElementById("sumOmset").innerText = rupiah(omset);
+  document.getElementById("sumHPP").innerText = rupiah(hpp);
+  document.getElementById("sumMargin").innerText = rupiah(margin);
+}
+
+/* ===== DISTRIBUSI REALTIME INPUT ===== */
+function renderDistribusiRealtime(){
+  const wrap = document.getElementById("distribusiResult");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+
+  const totalMargin = transaksiDraft.reduce((a,b)=>a+Number(b.margin||0),0);
+  distribusi.filter(d=>d.active).forEach(d=>{
+    const val = totalMargin * (Number(d.percent||0)/100);
+    const div = document.createElement("div");
+    div.className="dist-box";
+    div.innerHTML = `<div class="name">${d.name}</div><div class="value">${rupiah(val)}</div>`;
+    wrap.appendChild(div);
+  });
+}
+
+/* ================= SIMPAN TRANSAKSI ================= */
+async function simpanTransaksi(){
+  const region_id = document.getElementById("inputDaerah").value;
+  if(!region_id) return alert("Pilih daerah dulu Bos ??");
+  if(transaksiDraft.length===0) return alert("Belum ada item transaksi ??");
+
+  const date = new Date().toISOString().slice(0,10);
+
+  const total_omset = transaksiDraft.reduce((a,b)=>a+Number(b.omset||0),0);
+  const total_hpp = transaksiDraft.reduce((a,b)=>a+Number(b.hpp||0),0);
+  const total_margin = transaksiDraft.reduce((a,b)=>a+Number(b.margin||0),0);
+
+  const { data:trx, error } = await sb
+    .from("transactions")
+    .insert({
+      date,
+      region_id,
+      total_omset,
+      total_hpp,
+      total_margin
+    })
+    .select()
+    .single();
+
+  if(error) return alert("Gagal simpan transaksi: " + error.message);
+
+  const items = transaksiDraft.map(r=>({
+    transaction_id: trx.id,
+    product_id: r.product_id,
+    qty: r.qty,
+    price: r.price,
+    hpp: r.hpp / (r.qty || 1)  // simpan HPP satuan
+  }));
+
+  const { error:err2 } = await sb.from("transaction_items").insert(items);
+  if(err2) return alert("Gagal simpan item transaksi: " + err2.message);
+
+  transaksiDraft = [];
+  renderInput();
+  alert("Transaksi berhasil disimpan ??");
+}
+
+/* ================= LAPORAN ================= */
+async function refreshLaporan(){
+  const from = document.getElementById("filterFrom").value;
+  const to = document.getElementById("filterTo").value;
+  const productId = document.getElementById("filterProduk").value;
+  const regionId = document.getElementById("filterDaerah").value;
+
+  let query = sb
+    .from("transactions")
+    .select(`
+      id,
+      date,
+      region_id,
+      total_omset,
+      total_hpp,
+      total_margin,
+      regions(name),
+      transaction_items(
+        qty,
+        price,
+        hpp,
+        products(name)
+      )
+    `)
+    .order("date",{ascending:false});
+
+  if(from) query = query.gte("date", from);
+  if(to) query = query.lte("date", to);
+  if(regionId) query = query.eq("region_id", regionId);
+
+  const { data, error } = await query;
+  if(error) return alert("Gagal load laporan: " + error.message);
+
+  const filtered = (data||[]).map(t=>{
+    let items = t.transaction_items || [];
+    if(productId){
+      items = items.filter(i => i.products?.id === productId || i.product_id === productId);
+    }
+    return { ...t, transaction_items: items };
+  }).filter(t => t.transaction_items.length > 0 || !productId);
+
+  renderLaporan(filtered);
+}
+
+function resetFilter(){
+  document.getElementById("filterFrom").value="";
+  document.getElementById("filterTo").value="";
+  document.getElementById("filterProduk").value="";
+  document.getElementById("filterDaerah").value="";
+  refreshLaporan();
+}
+
+function renderLaporan(data){
+  /* ===== TOTAL ===== */
+  let totalOmset=0, totalHPP=0, totalMargin=0;
+
+  data.forEach(t=>{
+    totalOmset+=Number(t.total_omset||0);
+    totalHPP+=Number(t.total_hpp||0);
+    totalMargin+=Number(t.total_margin||0);
+  });
+
+  document.getElementById("lapTotalOmset").innerText = rupiah(totalOmset);
+  document.getElementById("lapTotalHPP").innerText = rupiah(totalHPP);
+  document.getElementById("lapTotalMargin").innerText = rupiah(totalMargin);
+
+  /* ===== DISTRIBUSI ===== */
+  const wrap = document.getElementById("lapDistribusi");
+  wrap.innerHTML="";
+  distribusi.filter(d=>d.active).forEach(d=>{
+    const val = totalMargin * (Number(d.percent||0)/100);
+    const div = document.createElement("div");
+    div.className="dist-box";
+    div.innerHTML = `<div class="name">${d.name}</div><div class="value">${rupiah(val)}</div>`;
+    wrap.appendChild(div);
+  });
+
+  /* ===== PER PRODUK ===== */
+  const map = {};
+  data.forEach(t=>{
+    (t.transaction_items||[]).forEach(i=>{
+      const name = i.products?.name || "-";
+      if(!map[name]) map[name]={qty:0, omset:0, hpp:0, margin:0};
+      const omset = Number(i.qty||0) * Number(i.price||0);
+      const hpp = Number(i.qty||0) * Number(i.hpp||0);
+      const margin = omset - hpp;
+      map[name].qty += Number(i.qty||0);
+      map[name].omset += omset;
+      map[name].hpp += hpp;
+      map[name].margin += margin;
+    });
+  });
+
+  const tbodyProduk = document.getElementById("lapProdukTable");
+  tbodyProduk.innerHTML="";
+  Object.entries(map).forEach(([name,v])=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${name}</td>
+      <td>${v.qty}</td>
+      <td class="right">${rupiah(v.omset)}</td>
+      <td class="right">${rupiah(v.hpp)}</td>
+      <td class="right">${rupiah(v.margin)}</td>
+    `;
+    tbodyProduk.appendChild(tr);
+  });
+
+  /* ===== DETAIL ===== */
+  const tbodyDetail = document.getElementById("lapDetailTable");
+  tbodyDetail.innerHTML="";
+  data.forEach(t=>{
+    const regionName = t.regions?.name || "-";
+    (t.transaction_items||[]).forEach(i=>{
+      const omset = Number(i.qty||0) * Number(i.price||0);
+      const hpp = Number(i.qty||0) * Number(i.hpp||0);
+      const margin = omset - hpp;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${t.date}</td>
+        <td>${regionName}</td>
+        <td>${i.products?.name||'-'}</td>
+        <td>${i.qty}</td>
+        <td class="right">${rupiah(i.price)}</td>
+        <td class="right">${rupiah(omset)}</td>
+        <td class="right">${rupiah(hpp)}</td>
+        <td class="right">${rupiah(margin)}</td>
+      `;
+      tbodyDetail.appendChild(tr);
+    });
+  });
+}
+
+async function hapusSemuaTransaksi(){
+  if(!confirm("?? Hapus SEMUA transaksi? Ini tidak bisa dibatalkan, Bos ??")) return;
+
+  const { error:err1 } = await sb.from("transaction_items").delete().not("id","is",null);
+  if(err1) return alert("Gagal hapus items: " + err1.message);
+
+  const { error:err2 } = await sb.from("transactions").delete().not("id","is",null);
+  if(err2) return alert("Gagal hapus transaksi: " + err2.message);
+
+  alert("Semua transaksi berhasil dihapus ??");
+  refreshLaporan();
+  refreshDashboard();
+}
+
+/* ================= INIT ================= */
+async function init(){
+  await loadProduk();
+  await loadDaerah();
+  await loadZones();
+  await loadDistribusi();
+  await loadMitra();
+  renderDashboardFilterDaerah();
+  renderSelectDaerah();
+  refreshDashboard();
+}
+
+init();
+</script>
+
+</body>
+</html>
