@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Tita • Akuntan Digital</title>
+  <title>Tita ï¿½ Akuntan Digital</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -395,7 +395,7 @@
 </head>
 <body>
 
-<header>Tita • Akuntan Digital</header>
+<header>Tita ï¿½ Akuntan Digital</header>
 
 <nav>
   <button id="tab-dashboard" onclick="showTab('dashboard')">Dashboard</button>
@@ -1326,18 +1326,29 @@ function renderSelectZonaDaerah(){
     daerah.filter(d=>d.active).map(d => `<option value="${d.id}">${d.name}</option>`).join("");
 }
 
-function loadZonaByDaerah(){
-  const regionId = document.getElementById("mitraDaerah")?.value;
-  const sel = document.getElementById("mitraZona");
-  if(!sel) return;
+function loadZonaByDaerah(regionId = null){
+  const regionSelect = document.getElementById("mitraDaerah");
+  const zoneSelect = document.getElementById("mitraZona");
 
-  sel.innerHTML = `<option value="">-- pilih zona --</option>`;
+  if(!zoneSelect || !regionSelect) return;
 
-  if(!regionId) return;
+  const selectedRegion = regionId || regionSelect.value;
+
+  zoneSelect.innerHTML = `<option value="">-- pilih zona --</option>`;
+
+  if(!selectedRegion) return;
 
   const filtered = zones.filter(z =>
-    z.active !== false && String(z.region_id) === String(regionId)
+    z.active !== false && String(z.region_id) === String(selectedRegion)
   );
+
+  filtered.forEach(z => {
+    const opt = document.createElement("option");
+    opt.value = z.id;
+    opt.textContent = z.name;
+    zoneSelect.appendChild(opt);
+  });
+}
 
   filtered.forEach(z => {
     const opt = document.createElement("option");
@@ -2072,6 +2083,15 @@ async function hapusSemuaTransaksi(){
   await loadMitra();
   showTab("dashboard");
 })();
+document.addEventListener("DOMContentLoaded", () => {
+  loadZones();
+});
+document.addEventListener("DOMContentLoaded", () => {
+  const regionSelect = document.getElementById("mitraDaerah");
+  if(regionSelect){
+    regionSelect.addEventListener("change", () => loadZonaByDaerah());
+  }
+});
 </script>
 
 </body>
