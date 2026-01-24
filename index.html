@@ -558,7 +558,7 @@
         <input id="kodeMitra" placeholder="Kode mitra">
         <input id="namaMitra" placeholder="Nama mitra">
         <input id="namaToko" placeholder="Nama toko">
-        <select id="mitraDaerah"></select>
+        <select id="mitraDaerah" onchange="loadZonaByDaerah()"></select>
         <select id="mitraZona"></select>
         <input id="kecamatanMitra" placeholder="Kecamatan">
         <input id="mapsMitra" placeholder="Link Google Maps">
@@ -1395,20 +1395,34 @@ function renderZona(){
 
 async function tambahZona(){
   const region_id = document.getElementById("zonaDaerah").value;
-  const name = document.getElementById("namaZona").value.trim();
+  const nameEl = document.getElementById("namaZona");
+  const name = nameEl.value.trim();
 
   if(!region_id || !name) return alert("Pilih daerah & isi nama zona dulu Bos ??");
 
-  const { error } = await sb.from("zones").insert({
-    name,
-    region_id,
-    active:true
-  });
-
+  const { error } = await sb.from("zones").insert({ name, region_id, active: true });
   if(error) return alert("Gagal simpan zona: " + error.message);
 
-  document.getElementById("namaZona").value = "";
+  nameEl.value = "";
+  nameEl.focus(); // ?? biar enak input lagi
   loadZones();
+}
+
+function loadZonaByDaerah(){
+  const regionId = document.getElementById("mitraDaerah")?.value;
+  const sel = document.getElementById("mitraZona");
+
+  sel.value = ""; // ?? reset selection
+
+  if(!regionId){
+    sel.innerHTML = `<option value="">-- pilih zona --</option>`;
+    return;
+  }
+
+  const list = zones.filter(z => String(z.region_id) === String(regionId) && z.active !== false);
+
+  sel.innerHTML = `<option value="">-- pilih zona --</option>` +
+    list.map(z => `<option value="${z.id}">${z.name}</option>`).join("");
 }
 
 function editZona(id){
@@ -1461,6 +1475,8 @@ function renderSelectMitraDaerah(){
   const sel = document.getElementById("mitraDaerah");
   sel.innerHTML = `<option value="">-- pilih daerah --</option>` +
     daerah.filter(d=>d.active).map(d => `<option value="${d.id}">${d.name}</option>`).join("");
+
+  loadZonaByDaerah(); // ? ini penting
 }
 
 function renderMitra(){
