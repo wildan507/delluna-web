@@ -867,13 +867,12 @@ async function loadDaerah(){
 async function loadZones(){
   const { data, error } = await sb
     .from("zones")
-    .select("*, regions(name)")
+    .select("*")
     .order("created_at");
 
   if(error) return alert("Gagal load zona: " + error.message);
   zones = data || [];
   renderZona();
-  renderSelectZona();
   loadZonaByDaerah();
 }
 
@@ -1328,18 +1327,24 @@ function renderSelectZonaDaerah(){
 }
 
 function loadZonaByDaerah(){
-  const regionId = document.getElementById("mitraDaerah").value;
+  const regionId = document.getElementById("mitraDaerah")?.value;
   const sel = document.getElementById("mitraZona");
+  if(!sel) return;
 
-  if(!regionId){
-    sel.innerHTML = `<option value="">-- pilih zona --</option>`;
-    return;
-  }
+  sel.innerHTML = `<option value="">-- pilih zona --</option>`;
 
-  const list = zones.filter(z => String(z.region_id) === String(regionId) && z.active !== false);
+  if(!regionId) return;
 
-  sel.innerHTML = `<option value="">-- pilih zona --</option>` +
-    list.map(z => `<option value="${z.id}">${z.name}</option>`).join("");
+  const filtered = zones.filter(z =>
+    z.active !== false && String(z.region_id) === String(regionId)
+  );
+
+  filtered.forEach(z => {
+    const opt = document.createElement("option");
+    opt.value = z.id;
+    opt.textContent = z.name;
+    sel.appendChild(opt);
+  });
 }
 
 function renderZona(){
@@ -1362,7 +1367,7 @@ function renderZona(){
     } else {
       tr.innerHTML = `
         <td>${z.name}</td>
-        <td>${z.regions?.name || "-"}</td>
+        <td>${daerah.find(d => d.id === z.region_id)?.name || "-"}</td>
         <td>${z.active ? `<span class="pill pill-active">Aktif</span>` : `<span class="pill pill-off">Nonaktif</span>`}</td>
         <td class="center">
           <button onclick="editZona('${z.id}')">Edit</button>
