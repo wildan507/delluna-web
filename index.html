@@ -1757,22 +1757,22 @@ async function hapusDistribusi(id){
 }
 
 function renderDistribusiRealtime(){
-  const wrap = document.getElementById("distribusiResult");
-  if(!wrap) return;
+  const box = document.getElementById("distribusiResult");
+  if(!box) return;
 
-  wrap.innerHTML = "";
+  const totalMargin = transaksiDraft.reduce((s,r)=>s+(r.margin||0),0);
 
-  const totalMargin = transaksiDraft.reduce((s,i)=>s+(i.margin||0),0);
+  box.innerHTML = "";
 
   distribusi.filter(d=>d.active).forEach(d=>{
-    const val = totalMargin * (Number(d.percent||0)/100);
+    const val = totalMargin * (d.percent/100);
     const div = document.createElement("div");
     div.className = "dist-box";
     div.innerHTML = `
       <div class="name">${d.name}</div>
       <div class="value">${rupiah(val)}</div>
     `;
-    wrap.appendChild(div);
+    box.appendChild(div);
   });
 }
 
@@ -1831,31 +1831,31 @@ function renderInput(){
       <td class="right">${rupiah(row.omset)}</td>
       <td class="right">${rupiah(row.hpp)}</td>
       <td class="right">${rupiah(row.margin)}</td>
-      <td class="center"><button onclick="hapusBaris(${i})">?</button></td>
+      <td class="center"><button onclick="hapusBaris(${i})">🗑</button></td>
     `;
 
     tbody.appendChild(tr);
   });
 
-  hitungTotal();
+  // ✅ PENTING: panggil sekali setelah semua baris jadi
+  renderDistribusiRealtime();
 }
 
-function updateRow(i,field,value){
+function updateRow(i, field, value){
   const row = transaksiDraft[i];
-  row[field] = field==="product_id" ? value : Number(value);
+  row[field] = value;
 
-  const p = produk.find(x => x.id === row.product_id);
-  if(p){
-    row.price = row.price || p.price;
-    row.omset = row.qty * row.price;
-    row.hpp = row.qty * p.hpp;
-    row.margin = row.omset - row.hpp;
-  }else{
-    row.omset = row.hpp = row.margin = 0;
-  }
+  row.qty = Number(row.qty||0);
+  row.price = Number(row.price||0);
+  row.omset = row.qty * row.price;
 
-  renderInput();
+  const prod = produk.find(p=>p.id===row.product_id);
+  row.hpp = prod ? prod.hpp * row.qty : 0;
+  row.margin = row.omset - row.hpp;
+
+  renderInput(); // ini otomatis trigger renderDistribusiRealtime()
 }
+
 
 function hitungTotal(){
   let sumOmset = 0;
