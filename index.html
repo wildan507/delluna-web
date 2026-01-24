@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Tita ï¿½ Akuntan Digital</title>
+  <title>Tita • Akuntan Digital</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -395,7 +395,7 @@
 </head>
 <body>
 
-<header>Tita ï¿½ Akuntan Digital</header>
+<header>Tita • Akuntan Digital</header>
 
 <nav>
   <button id="tab-dashboard" onclick="showTab('dashboard')">Dashboard</button>
@@ -873,9 +873,10 @@ async function loadZones(){
   if(error) return alert("Gagal load zona: " + error.message);
   zones = data || [];
   renderZona();
-  renderSelectZonaDaerah();
+  renderSelectZona();
   loadZonaByDaerah();
 }
+
 /* ========= LOAD MITRA (PAGINATION + FILTER STATUS) ========= */
 async function loadMitra(){
   const statusFilter = document.getElementById("filterVisit")?.value || "";
@@ -1320,28 +1321,25 @@ function renderSelectZona(){
   sel.innerHTML = `<option value="">-- pilih zona --</option>`;
 }
 
-function loadZonaByDaerah(regionId = null){
-  const regionSelect = document.getElementById("mitraDaerah");
-  const zoneSelect = document.getElementById("mitraZona");
+function renderSelectZonaDaerah(){
+  const sel = document.getElementById("zonaDaerah");
+  sel.innerHTML = `<option value="">-- pilih daerah --</option>` +
+    daerah.filter(d=>d.active).map(d => `<option value="${d.id}">${d.name}</option>`).join("");
+}
 
-  if(!zoneSelect || !regionSelect) return;
+function loadZonaByDaerah(){
+  const regionId = document.getElementById("mitraDaerah").value;
+  const sel = document.getElementById("mitraZona");
 
-  const selectedRegion = regionId || regionSelect.value;
+  if(!regionId){
+    sel.innerHTML = `<option value="">-- pilih zona --</option>`;
+    return;
+  }
 
-  zoneSelect.innerHTML = `<option value="">-- pilih zona --</option>`;
+  const list = zones.filter(z => String(z.region_id) === String(regionId) && z.active !== false);
 
-  if(!selectedRegion) return;
-
-  const filtered = zones.filter(z =>
-    z.active !== false && String(z.region_id) === String(selectedRegion)
-  );
-
-  filtered.forEach(z => {
-    const opt = document.createElement("option");
-    opt.value = z.id;
-    opt.textContent = z.name;
-    zoneSelect.appendChild(opt);
-  });
+  sel.innerHTML = `<option value="">-- pilih zona --</option>` +
+    list.map(z => `<option value="${z.id}">${z.name}</option>`).join("");
 }
 
 function renderZona(){
@@ -1364,7 +1362,7 @@ function renderZona(){
     } else {
       tr.innerHTML = `
         <td>${z.name}</td>
-        <td>${daerah.find(d => d.id === z.region_id)?.name || "-"}</td>
+        <td>${z.regions?.name || "-"}</td>
         <td>${z.active ? `<span class="pill pill-active">Aktif</span>` : `<span class="pill pill-off">Nonaktif</span>`}</td>
         <td class="center">
           <button onclick="editZona('${z.id}')">Edit</button>
@@ -1757,22 +1755,22 @@ async function hapusDistribusi(id){
 }
 
 function renderDistribusiRealtime(){
-  const box = document.getElementById("distribusiResult");
-  if(!box) return;
+  const wrap = document.getElementById("distribusiResult");
+  wrap.innerHTML = "";
 
-  const totalMargin = transaksiDraft.reduce((s,r)=>s+(r.margin||0),0);
+  const totalMargin = transaksiDraft.reduce((s,x)=>s+Number(x.margin||0),0);
 
-  box.innerHTML = "";
+  distribusi.filter(d=>d.active).forEach(d => {
+    const persen = Number(d.percentage||d.percent||0);
+    const nilai = totalMargin * persen / 100;
 
-  distribusi.filter(d=>d.active).forEach(d=>{
-    const val = totalMargin * (d.percent/100);
     const div = document.createElement("div");
     div.className = "dist-box";
     div.innerHTML = `
-      <div class="name">${d.name}</div>
-      <div class="value">${rupiah(val)}</div>
+      <div class="name">${d.name} (${persen}%)</div>
+      <div class="value">${rupiah(nilai)}</div>
     `;
-    box.appendChild(div);
+    wrap.appendChild(div);
   });
 }
 
@@ -1831,31 +1829,31 @@ function renderInput(){
       <td class="right">${rupiah(row.omset)}</td>
       <td class="right">${rupiah(row.hpp)}</td>
       <td class="right">${rupiah(row.margin)}</td>
-      <td class="center"><button onclick="hapusBaris(${i})">ðŸ—‘</button></td>
+      <td class="center"><button onclick="hapusBaris(${i})">?</button></td>
     `;
 
     tbody.appendChild(tr);
   });
 
-  // âœ… PENTING: panggil sekali setelah semua baris jadi
-  renderDistribusiRealtime();
+  hitungTotal();
 }
 
-function updateRow(i, field, value){
+function updateRow(i,field,value){
   const row = transaksiDraft[i];
-  row[field] = value;
+  row[field] = field==="product_id" ? value : Number(value);
 
-  row.qty = Number(row.qty||0);
-  row.price = Number(row.price||0);
-  row.omset = row.qty * row.price;
+  const p = produk.find(x => x.id === row.product_id);
+  if(p){
+    row.price = row.price || p.price;
+    row.omset = row.qty * row.price;
+    row.hpp = row.qty * p.hpp;
+    row.margin = row.omset - row.hpp;
+  }else{
+    row.omset = row.hpp = row.margin = 0;
+  }
 
-  const prod = produk.find(p=>p.id===row.product_id);
-  row.hpp = prod ? prod.hpp * row.qty : 0;
-  row.margin = row.omset - row.hpp;
-
-  renderInput(); // ini otomatis trigger renderDistribusiRealtime()
+  renderInput();
 }
-
 
 function hitungTotal(){
   let sumOmset = 0;
@@ -2059,36 +2057,7 @@ async function hapusSemuaTransaksi(){
   alert("Semua transaksi sudah dihapus ??");
   refreshDashboard();
 }
-function renderSelectDaerahGlobal(){
-  const selects = [
-    "zonaDaerah",
-    "mitraDaerah",
-    "inputDaerah",
-    "filterDaerah",
-    "dashboardDaerah"
-  ];
 
-  selects.forEach(id=>{
-    const sel = document.getElementById(id);
-    if(!sel) return;
-    sel.innerHTML = `<option value="">-- pilih daerah --</option>` +
-      daerah.filter(d=>d.active).map(d=>`<option value="${d.id}">${d.name}</option>`).join("");
-  });
-}
-
-function renderSelectMitraDaerah(){
-  const sel = document.getElementById("mitraDaerah");
-  if(!sel) return;
-  sel.innerHTML = `<option value="">-- pilih daerah --</option>` +
-    daerah.filter(d=>d.active).map(d=>`<option value="${d.id}">${d.name}</option>`).join("");
-}
-
-function renderSelectZonaDaerah(){
-  const sel = document.getElementById("zonaDaerah");
-  if(!sel) return;
-  sel.innerHTML = `<option value="">-- pilih daerah --</option>` +
-    daerah.filter(d=>d.active).map(d=>`<option value="${d.id}">${d.name}</option>`).join("");
-}
 /* ================= INIT ================= */
 (async ()=>{
   await loadProduk();
@@ -2097,13 +2066,7 @@ function renderSelectZonaDaerah(){
   await loadDistribusi();
   await loadMitra();
   showTab("dashboard");
-
-  const regionSelect = document.getElementById("mitraDaerah");
-  if(regionSelect){
-    regionSelect.addEventListener("change", () => loadZonaByDaerah());
-  }
 })();
-
 </script>
 
 </body>
