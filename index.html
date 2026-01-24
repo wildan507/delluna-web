@@ -1320,12 +1320,6 @@ function renderSelectZona(){
   sel.innerHTML = `<option value="">-- pilih zona --</option>`;
 }
 
-function renderSelectZonaDaerah(){
-  const sel = document.getElementById("zonaDaerah");
-  sel.innerHTML = `<option value="">-- pilih daerah --</option>` +
-    daerah.filter(d=>d.active).map(d => `<option value="${d.id}">${d.name}</option>`).join("");
-}
-
 function loadZonaByDaerah(regionId = null){
   const regionSelect = document.getElementById("mitraDaerah");
   const zoneSelect = document.getElementById("mitraZona");
@@ -1347,14 +1341,6 @@ function loadZonaByDaerah(regionId = null){
     opt.value = z.id;
     opt.textContent = z.name;
     zoneSelect.appendChild(opt);
-  });
-}
-
-  filtered.forEach(z => {
-    const opt = document.createElement("option");
-    opt.value = z.id;
-    opt.textContent = z.name;
-    sel.appendChild(opt);
   });
 }
 
@@ -2082,16 +2068,13 @@ async function hapusSemuaTransaksi(){
   await loadDistribusi();
   await loadMitra();
   showTab("dashboard");
-})();
-document.addEventListener("DOMContentLoaded", () => {
-  loadZones();
-});
-document.addEventListener("DOMContentLoaded", () => {
+
   const regionSelect = document.getElementById("mitraDaerah");
   if(regionSelect){
     regionSelect.addEventListener("change", () => loadZonaByDaerah());
   }
-});
+})();
+
 </script>
 
 </body>
