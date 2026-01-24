@@ -46,7 +46,6 @@
       border-bottom:1px solid var(--border);
       flex-wrap:wrap;
       position:relative;
-      align-items:center;
     }
 
     nav button{
@@ -78,7 +77,6 @@
                  0 8px 20px rgba(212,175,55,.45);
     }
 
-    /* ===== DROPDOWN (CLICK BASED, NOT HOVER) ===== */
     .dropdown{
       position:relative;
       display:inline-block;
@@ -99,7 +97,7 @@
                  inset 0 1px 0 rgba(255,255,255,.05);
     }
 
-    .dropdown.open .dropdown-menu{
+    .dropdown:hover .dropdown-menu{
       display:block;
     }
 
@@ -402,8 +400,8 @@
 <nav>
   <button id="tab-dashboard" onclick="showTab('dashboard')">Dashboard</button>
 
-  <div class="dropdown" id="controlDropdown">
-    <button id="tab-control" onclick="toggleDropdown()">Control Panel ?</button>
+  <div class="dropdown">
+    <button id="tab-control">Control Panel</button>
     <div class="dropdown-menu">
       <button id="tab-produk" onclick="showTab('produk')">Produk</button>
       <button id="tab-daerah" onclick="showTab('daerah')">Daerah</button>
@@ -682,7 +680,7 @@
       </div>
 
       <div style="margin-top:14px;">
-        <button class="btn-primary" onclick="simpanTransaksi()">? Simpan Transaksi</button>
+        <button class="btn-primary" onclick="simpanTransaksi()">?? Simpan Transaksi</button>
       </div>
     </div>
   </div>
@@ -822,18 +820,6 @@ function getLast6Months(){
   return res;
 }
 
-/* ================= NAV / DROPDOWN ================= */
-function toggleDropdown(){
-  document.getElementById("controlDropdown").classList.toggle("open");
-}
-
-document.addEventListener("click", e => {
-  const drop = document.getElementById("controlDropdown");
-  if(drop && !drop.contains(e.target)){
-    drop.classList.remove("open");
-  }
-});
-
 /* ================= TAB NAV ================= */
 function showTab(tab) {
   const tabs = ["dashboard","produk","daerah","zona","mitra","distribusi","input","laporan"];
@@ -843,12 +829,9 @@ function showTab(tab) {
     const btn = document.getElementById("tab-"+t);
     if(btn) btn.classList.remove("active");
   });
-
   document.getElementById(tab+"Tab").classList.remove("hidden");
   const activeBtn = document.getElementById("tab-"+tab);
   if(activeBtn) activeBtn.classList.add("active");
-
-  document.getElementById("controlDropdown").classList.remove("open");
 
   if (tab === "laporan") refreshLaporan();
   if (tab === "dashboard") refreshDashboard();
@@ -890,11 +873,11 @@ async function loadZones(){
   if(error) return alert("Gagal load zona: " + error.message);
   zones = data || [];
   renderZona();
-  renderSelectZonaDaerah();
+  renderSelectZona();
   loadZonaByDaerah();
 }
 
-/* ========= LOAD MITRA ========= */
+/* ========= LOAD MITRA (PAGINATION + FILTER STATUS) ========= */
 async function loadMitra(){
   const statusFilter = document.getElementById("filterVisit")?.value || "";
 
@@ -1345,7 +1328,7 @@ function renderSelectZonaDaerah(){
 }
 
 function loadZonaByDaerah(){
-  const regionId = document.getElementById("mitraDaerah")?.value;
+  const regionId = document.getElementById("mitraDaerah").value;
   const sel = document.getElementById("mitraZona");
 
   if(!regionId){
@@ -1395,34 +1378,20 @@ function renderZona(){
 
 async function tambahZona(){
   const region_id = document.getElementById("zonaDaerah").value;
-  const nameEl = document.getElementById("namaZona");
-  const name = nameEl.value.trim();
+  const name = document.getElementById("namaZona").value.trim();
 
   if(!region_id || !name) return alert("Pilih daerah & isi nama zona dulu Bos ??");
 
-  const { error } = await sb.from("zones").insert({ name, region_id, active: true });
+  const { error } = await sb.from("zones").insert({
+    name,
+    region_id,
+    active:true
+  });
+
   if(error) return alert("Gagal simpan zona: " + error.message);
 
-  nameEl.value = "";
-  nameEl.focus(); // ?? biar enak input lagi
+  document.getElementById("namaZona").value = "";
   loadZones();
-}
-
-function loadZonaByDaerah(){
-  const regionId = document.getElementById("mitraDaerah")?.value;
-  const sel = document.getElementById("mitraZona");
-
-  sel.value = ""; // ?? reset selection
-
-  if(!regionId){
-    sel.innerHTML = `<option value="">-- pilih zona --</option>`;
-    return;
-  }
-
-  const list = zones.filter(z => String(z.region_id) === String(regionId) && z.active !== false);
-
-  sel.innerHTML = `<option value="">-- pilih zona --</option>` +
-    list.map(z => `<option value="${z.id}">${z.name}</option>`).join("");
 }
 
 function editZona(id){
@@ -1476,7 +1445,7 @@ function renderSelectMitraDaerah(){
   sel.innerHTML = `<option value="">-- pilih daerah --</option>` +
     daerah.filter(d=>d.active).map(d => `<option value="${d.id}">${d.name}</option>`).join("");
 
-  loadZonaByDaerah(); // ? ini penting
+  loadZonaByDaerah();
 }
 
 function renderMitra(){
@@ -1484,73 +1453,163 @@ function renderMitra(){
   tbody.innerHTML = "";
 
   mitra.forEach(m => {
-    const tr = document.createElement("tr");
+    const namaDaerah = m.regions?.name || "-";
+    const namaZona = m.zones?.name || "-";
+    const mapsLink = m.maps_url ? `<a href="${m.maps_url}" target="_blank" class="link">Maps</a>` : "-";
 
-    tr.innerHTML = `
-      <td>${m.code || "-"}</td>
-      <td>${m.name}</td>
-      <td>${m.store_name || "-"}</td>
-      <td>${m.regions?.name || "-"}</td>
-      <td>${m.zones?.name || "-"}</td>
-      <td>${m.district || "-"}</td>
-      <td>${m.maps_url ? `<a href="${m.maps_url}" target="_blank" class="link">Maps</a>` : "-"}</td>
-      <td>
-        <button class="status-btn ${m.visit_status === "sudah" ? "status-sudah" : "status-belum"}"
-                onclick="toggleVisitStatus('${m.id}','${m.visit_status}')">
-          ${m.visit_status === "sudah" ? "Sudah" : "Belum"}
-        </button>
-      </td>
-      <td class="center">
-        <button class="btn-danger" onclick="hapusMitra('${m.id}')">Hapus</button>
-      </td>
+    const statusBtn = `
+      <span class="status-btn ${m.visit_status === 'sudah' ? 'status-sudah' : 'status-belum'}"
+        onclick="toggleVisitStatus('${m.id}','${m.visit_status}')">
+        ${m.visit_status === 'sudah' ? 'Sudah' : 'Belum'}
+      </span>
     `;
 
+    const tr = document.createElement("tr");
+
+    if (m.edit) {
+      tr.innerHTML = `
+        <td><input value="${m.code}" id="edit-kode-${m.id}"></td>
+        <td><input value="${m.name}" id="edit-nama-${m.id}"></td>
+        <td><input value="${m.shop_name||''}" id="edit-toko-${m.id}"></td>
+        <td>
+          <select id="edit-daerah-mitra-${m.id}" onchange="loadZonaEdit('${m.id}')">
+            ${daerah.filter(d=>d.active).map(d=>`
+              <option value="${d.id}" ${String(d.id)===String(m.region_id)?"selected":""}>${d.name}</option>
+            `).join("")}
+          </select>
+        </td>
+        <td>
+          <select id="edit-zona-mitra-${m.id}"></select>
+        </td>
+        <td><input value="${m.district||''}" id="edit-kecamatan-${m.id}"></td>
+        <td><input value="${m.maps_url||''}" id="edit-maps-${m.id}"></td>
+        <td>${statusBtn}</td>
+        <td class="center">
+          <button onclick="simpanEditMitra('${m.id}')">Simpan</button>
+          <button onclick="batalEditMitra('${m.id}')">Batal</button>
+        </td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td>${m.code}</td>
+        <td>${m.name}</td>
+        <td>${m.shop_name||'-'}</td>
+        <td>${namaDaerah}</td>
+        <td>${namaZona}</td>
+        <td>${m.district||'-'}</td>
+        <td>${mapsLink}</td>
+        <td>${statusBtn}</td>
+        <td class="center">
+          <button onclick="editMitra('${m.id}')">Edit</button>
+          <button onclick="toggleMitra('${m.id}')">${m.active ? "Nonaktifkan" : "Aktifkan"}</button>
+          <button class="btn-danger" onclick="hapusMitra('${m.id}')">Hapus</button>
+        </td>
+      `;
+    }
+
     tbody.appendChild(tr);
+
+    if(m.edit){
+      loadZonaEdit(m.id, m.zone_id);
+    }
   });
+}
+
+function loadZonaEdit(mitraId, selectedZoneId=null){
+  const regionId = document.getElementById(`edit-daerah-mitra-${mitraId}`).value;
+  const sel = document.getElementById(`edit-zona-mitra-${mitraId}`);
+
+  const list = zones.filter(z => String(z.region_id) === String(regionId) && z.active !== false);
+
+  sel.innerHTML = `<option value="">-- pilih zona --</option>` +
+    list.map(z => `
+      <option value="${z.id}" ${String(z.id)===String(selectedZoneId)?"selected":""}>${z.name}</option>
+    `).join("");
 }
 
 async function tambahMitra(){
   const code = document.getElementById("kodeMitra").value.trim();
   const name = document.getElementById("namaMitra").value.trim();
-  const store_name = document.getElementById("namaToko").value.trim();
+  const shop_name = document.getElementById("namaToko").value.trim();
   const region_id = document.getElementById("mitraDaerah").value;
   const zone_id = document.getElementById("mitraZona").value;
   const district = document.getElementById("kecamatanMitra").value.trim();
   const maps_url = document.getElementById("mapsMitra").value.trim();
 
-  if(!name || !region_id || !zone_id) return alert("Nama, daerah & zona wajib diisi Bos ??");
+  if(!code || !name || !region_id) return alert("Kode, nama & daerah wajib diisi Bos ??");
 
   const { error } = await sb.from("partners").insert({
     code,
     name,
-    store_name,
+    shop_name,
     region_id,
-    zone_id,
+    zone_id: zone_id || null,
     district,
     maps_url,
-    visit_status: "belum"
+    visit_status: "belum",
+    active:true
   });
 
   if(error) return alert("Gagal simpan mitra: " + error.message);
 
-  ["kodeMitra","namaMitra","namaToko","kecamatanMitra","mapsMitra"].forEach(id=>{
-    document.getElementById(id).value = "";
-  });
-  document.getElementById("mitraZona").innerHTML = `<option value="">-- pilih zona --</option>`;
+  document.getElementById("kodeMitra").value = "";
+  document.getElementById("namaMitra").value = "";
+  document.getElementById("namaToko").value = "";
+  document.getElementById("kecamatanMitra").value = "";
+  document.getElementById("mapsMitra").value = "";
 
   loadMitra();
 }
 
-async function toggleVisitStatus(id, current){
-  const next = current === "sudah" ? "belum" : "sudah";
-  const { error } = await sb.from("partners").update({ visit_status: next }).eq("id", id);
+function editMitra(id){
+  mitra.forEach(m => m.edit = false);
+  const m = mitra.find(x => x.id === id);
+  m.edit = true;
+  renderMitra();
+}
+
+async function simpanEditMitra(id){
+  if(!isValidUUID(id)) return;
+
+  const code = document.getElementById(`edit-kode-${id}`).value.trim();
+  const name = document.getElementById(`edit-nama-${id}`).value.trim();
+  const shop_name = document.getElementById(`edit-toko-${id}`).value.trim();
+  const region_id = document.getElementById(`edit-daerah-mitra-${id}`).value;
+  const zone_id = document.getElementById(`edit-zona-mitra-${id}`).value;
+  const district = document.getElementById(`edit-kecamatan-${id}`).value.trim();
+  const maps_url = document.getElementById(`edit-maps-${id}`).value.trim();
+
+  const { error } = await sb
+    .from("partners")
+    .update({
+      code,
+      name,
+      shop_name,
+      region_id,
+      zone_id: zone_id || null,
+      district,
+      maps_url
+    })
+    .eq("id", id);
+
   if(error) return alert(error.message);
   loadMitra();
 }
 
-async function resetVisitStatus(){
-  if(!confirm("Reset semua status kunjungan ke BELUM?")) return;
-  const { error } = await sb.from("partners").update({ visit_status: "belum" }).neq("id", "");
+function batalEditMitra(id){
+  const m = mitra.find(x => x.id === id);
+  m.edit = false;
+  renderMitra();
+}
+
+async function toggleMitra(id){
+  if(!isValidUUID(id)) return;
+  const m = mitra.find(x => x.id === id);
+  const { error } = await sb
+    .from("partners")
+    .update({ active: !m.active })
+    .eq("id", id);
+
   if(error) return alert(error.message);
   loadMitra();
 }
@@ -1563,6 +1622,28 @@ async function hapusMitra(id){
   loadMitra();
 }
 
+async function toggleVisitStatus(id,current){
+  const newStatus = current === "sudah" ? "belum" : "sudah";
+  const { error } = await sb
+    .from("partners")
+    .update({ visit_status:newStatus })
+    .eq("id", id);
+
+  if(error) return alert(error.message);
+  loadMitra();
+}
+
+async function resetVisitStatus(){
+  if(!confirm("Yakin reset semua status kunjungan bulan ini? ??")) return;
+  const { error } = await sb
+    .from("partners")
+    .update({ visit_status:"belum" })
+    .neq("visit_status","belum");
+
+  if(error) return alert(error.message);
+  loadMitra();
+}
+
 /* ================= DISTRIBUSI ================= */
 function renderDistribusi(){
   const tbody = document.getElementById("distribusiTable");
@@ -1571,14 +1652,15 @@ function renderDistribusi(){
   let total = 0;
 
   distribusi.forEach(d => {
-    total += Number(d.percent || 0);
+    const persen = Number(d.percentage||d.percent||0);
+    total += persen;
 
     const tr = document.createElement("tr");
 
-    if(d.edit){
+    if (d.edit) {
       tr.innerHTML = `
-        <td><input value="${d.name}" id="edit-dist-name-${d.id}"></td>
-        <td><input type="number" step="0.1" value="${d.percent}" id="edit-dist-percent-${d.id}"></td>
+        <td>${d.name}</td>
+        <td><input type="number" step="0.1" value="${persen}" id="edit-pers-${d.id}"></td>
         <td>${d.active ? `<span class="pill pill-active">Aktif</span>` : `<span class="pill pill-off">Nonaktif</span>`}</td>
         <td class="center">
           <button onclick="simpanEditDistribusi('${d.id}')">Simpan</button>
@@ -1588,7 +1670,7 @@ function renderDistribusi(){
     } else {
       tr.innerHTML = `
         <td>${d.name}</td>
-        <td>${d.percent}%</td>
+        <td>${persen}%</td>
         <td>${d.active ? `<span class="pill pill-active">Aktif</span>` : `<span class="pill pill-off">Nonaktif</span>`}</td>
         <td class="center">
           <button onclick="editDistribusi('${d.id}')">Edit</button>
@@ -1601,19 +1683,20 @@ function renderDistribusi(){
     tbody.appendChild(tr);
   });
 
-  document.getElementById("totalPersen").innerText =
-    "Total Persentase Aktif: " + total.toFixed(2) + "%";
+  const note = document.getElementById("totalPersen");
+  note.innerHTML = `Total: <b>${total.toFixed(2)}%</b> ${total===100?"?":"?"}`;
+  note.style.color = total===100 ? "var(--success)" : "var(--danger)";
 }
 
 async function tambahDistribusi(){
   const name = document.getElementById("namaPos").value.trim();
-  const percent = Number(document.getElementById("persenPos").value);
+  const percentage = Number(document.getElementById("persenPos").value);
 
-  if(!name || !percent) return alert("Isi nama & persen dulu Bos ??");
+  if(!name || isNaN(percentage)) return alert("Isi nama & persen dulu Bos ??");
 
   const { error } = await sb.from("distributions").insert({
     name,
-    percent,
+    percentage,
     active:true
   });
 
@@ -1621,6 +1704,7 @@ async function tambahDistribusi(){
 
   document.getElementById("namaPos").value = "";
   document.getElementById("persenPos").value = "";
+
   loadDistribusi();
 }
 
@@ -1633,12 +1717,11 @@ function editDistribusi(id){
 
 async function simpanEditDistribusi(id){
   if(!isValidUUID(id)) return;
-  const name = document.getElementById(`edit-dist-name-${id}`).value.trim();
-  const percent = Number(document.getElementById(`edit-dist-percent-${id}`).value);
+  const percentage = Number(document.getElementById(`edit-pers-${id}`).value);
 
   const { error } = await sb
     .from("distributions")
-    .update({ name, percent })
+    .update({ percentage })
     .eq("id", id);
 
   if(error) return alert(error.message);
@@ -1665,28 +1748,39 @@ async function toggleDistribusi(id){
 
 async function hapusDistribusi(id){
   if(!isValidUUID(id)) return alert("ID distribusi invalid");
-  if (!confirm("Yakin mau hapus pos distribusi ini, Bos? ??")) return;
+  if (!confirm("Yakin mau hapus distribusi ini, Bos? ??")) return;
   const { error } = await sb.from("distributions").delete().eq("id", id);
   if(error) return alert(error.message);
   loadDistribusi();
 }
 
-/* ================= INPUT TRANSAKSI ================= */
-function renderSelectProduk(selectEl){
-  selectEl.innerHTML = `<option value="">-- pilih produk --</option>` +
-    produk.filter(p=>p.active).map(p =>
-      `<option value="${p.id}" data-hpp="${p.hpp}" data-price="${p.price}">${p.name}</option>`
-    ).join("");
+function renderDistribusiRealtime(){
+  const wrap = document.getElementById("distribusiResult");
+  wrap.innerHTML = "";
+
+  const totalMargin = transaksiDraft.reduce((s,x)=>s+Number(x.margin||0),0);
+
+  distribusi.filter(d=>d.active).forEach(d => {
+    const persen = Number(d.percentage||d.percent||0);
+    const nilai = totalMargin * persen / 100;
+
+    const div = document.createElement("div");
+    div.className = "dist-box";
+    div.innerHTML = `
+      <div class="name">${d.name} (${persen}%)</div>
+      <div class="value">${rupiah(nilai)}</div>
+    `;
+    wrap.appendChild(div);
+  });
 }
 
+/* ================= INPUT ================= */
 function renderSelectDaerahGlobal(){
-  const sels = [
-    document.getElementById("inputDaerah"),
-    document.getElementById("filterDaerah")
-  ];
-  sels.forEach(sel=>{
+  const sels = ["inputDaerah","filterDaerah","dashboardDaerah"];
+  sels.forEach(id=>{
+    const sel = document.getElementById(id);
     if(!sel) return;
-    sel.innerHTML = `<option value="">Semua Daerah</option>` +
+    sel.innerHTML = `<option value="">${id==="inputDaerah"?"-- pilih daerah --":"Semua Daerah"}</option>` +
       daerah.filter(d=>d.active).map(d => `<option value="${d.id}">${d.name}</option>`).join("");
   });
 }
@@ -1694,166 +1788,106 @@ function renderSelectDaerahGlobal(){
 function renderFilterProduk(){
   const sel = document.getElementById("filterProduk");
   sel.innerHTML = `<option value="">Semua Produk</option>` +
-    produk.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+    produk.filter(p=>p.active).map(p => `<option value="${p.id}">${p.name}</option>`).join("");
 }
 
 function tambahBaris(){
-  const tbody = document.getElementById("inputTable");
-  const tr = document.createElement("tr");
-
-  tr.innerHTML = `
-    <td><select class="row-produk"></select></td>
-    <td><input type="number" min="1" value="1" class="row-qty"></td>
-    <td><input type="number" class="row-price"></td>
-    <td class="right row-omset">Rp 0</td>
-    <td class="right row-hpp">Rp 0</td>
-    <td class="right row-margin">Rp 0</td>
-    <td class="center"><button class="btn-danger">X</button></td>
-  `;
-
-  const selProduk = tr.querySelector(".row-produk");
-  const inpQty = tr.querySelector(".row-qty");
-  const inpPrice = tr.querySelector(".row-price");
-  const btnDel = tr.querySelector("button");
-
-  renderSelectProduk(selProduk);
-
-  selProduk.addEventListener("change", () => hitungBaris(tr));
-  inpQty.addEventListener("input", () => hitungBaris(tr));
-  inpPrice.addEventListener("input", () => hitungBaris(tr));
-  btnDel.addEventListener("click", () => {
-    tr.remove();
-    hitungTotal();
+  transaksiDraft.push({
+    product_id:"",
+    qty:1,
+    price:0,
+    omset:0,
+    hpp:0,
+    margin:0
   });
-
-  tbody.appendChild(tr);
+  renderInput();
 }
 
-function hitungBaris(tr){
-  const sel = tr.querySelector(".row-produk");
-  const qty = Number(tr.querySelector(".row-qty").value || 0);
-  const priceInput = tr.querySelector(".row-price");
-  const omsetEl = tr.querySelector(".row-omset");
-  const hppEl = tr.querySelector(".row-hpp");
-  const marginEl = tr.querySelector(".row-margin");
+function hapusBaris(i){
+  transaksiDraft.splice(i,1);
+  renderInput();
+}
 
-  const opt = sel.selectedOptions[0];
-  if(!opt){
-    omsetEl.innerText = "Rp 0";
-    hppEl.innerText = "Rp 0";
-    marginEl.innerText = "Rp 0";
-    return;
-  }
+function renderInput(){
+  const tbody = document.getElementById("inputTable");
+  tbody.innerHTML = "";
 
-  const hpp = Number(opt.dataset.hpp || 0);
-  const defaultPrice = Number(opt.dataset.price || 0);
-  const price = Number(priceInput.value || defaultPrice);
+  transaksiDraft.forEach((row,i)=>{
+    const tr = document.createElement("tr");
 
-  if(!priceInput.value) priceInput.value = defaultPrice;
+    tr.innerHTML = `
+      <td>
+        <select onchange="updateRow(${i},'product_id',this.value)">
+          <option value="">-- pilih produk --</option>
+          ${produk.filter(p=>p.active).map(p=>`
+            <option value="${p.id}" ${p.id===row.product_id?"selected":""}>${p.name}</option>
+          `).join("")}
+        </select>
+      </td>
+      <td><input type="number" min="1" value="${row.qty}" onchange="updateRow(${i},'qty',this.value)"></td>
+      <td><input type="number" value="${row.price}" onchange="updateRow(${i},'price',this.value)"></td>
+      <td class="right">${rupiah(row.omset)}</td>
+      <td class="right">${rupiah(row.hpp)}</td>
+      <td class="right">${rupiah(row.margin)}</td>
+      <td class="center"><button onclick="hapusBaris(${i})">?</button></td>
+    `;
 
-  const omset = qty * price;
-  const hppTotal = qty * hpp;
-  const margin = omset - hppTotal;
-
-  omsetEl.innerText = rupiah(omset);
-  hppEl.innerText = rupiah(hppTotal);
-  marginEl.innerText = rupiah(margin);
+    tbody.appendChild(tr);
+  });
 
   hitungTotal();
 }
 
+function updateRow(i,field,value){
+  const row = transaksiDraft[i];
+  row[field] = field==="product_id" ? value : Number(value);
+
+  const p = produk.find(x => x.id === row.product_id);
+  if(p){
+    row.price = row.price || p.price;
+    row.omset = row.qty * row.price;
+    row.hpp = row.qty * p.hpp;
+    row.margin = row.omset - row.hpp;
+  }else{
+    row.omset = row.hpp = row.margin = 0;
+  }
+
+  renderInput();
+}
+
 function hitungTotal(){
-  const rows = document.querySelectorAll("#inputTable tr");
-  let sumOmset = 0, sumHPP = 0, sumMargin = 0;
+  let sumOmset = 0;
+  let sumHPP = 0;
+  let sumMargin = 0;
 
-  rows.forEach(tr=>{
-    const omset = tr.querySelector(".row-omset").innerText.replace(/[^\d]/g,"");
-    const hpp = tr.querySelector(".row-hpp").innerText.replace(/[^\d]/g,"");
-    const margin = tr.querySelector(".row-margin").innerText.replace(/[^\d]/g,"");
-
-    sumOmset += Number(omset || 0);
-    sumHPP += Number(hpp || 0);
-    sumMargin += Number(margin || 0);
+  transaksiDraft.forEach(r=>{
+    sumOmset += Number(r.omset||0);
+    sumHPP += Number(r.hpp||0);
+    sumMargin += Number(r.margin||0);
   });
 
   document.getElementById("sumOmset").innerText = rupiah(sumOmset);
   document.getElementById("sumHPP").innerText = rupiah(sumHPP);
   document.getElementById("sumMargin").innerText = rupiah(sumMargin);
 
-  renderDistribusiRealtime(sumMargin);
+  renderDistribusiRealtime();
 }
 
-function renderDistribusiRealtime(totalMargin = 0){
-  const wrap = document.getElementById("distribusiResult");
-  wrap.innerHTML = "";
-
-  distribusi.filter(d=>d.active).forEach(d=>{
-    const val = totalMargin * (Number(d.percent||0) / 100);
-    const div = document.createElement("div");
-    div.className = "dist-box";
-    div.innerHTML = `
-      <div class="name">${d.name}</div>
-      <div class="value">${rupiah(val)}</div>
-    `;
-    wrap.appendChild(div);
-  });
-}
-
-function renderInput(){
-  const tbody = document.getElementById("inputTable");
-  if(tbody.children.length === 0){
-    tambahBaris();
-  }
-}
-
-/* ================= SIMPAN TRANSAKSI ================= */
 async function simpanTransaksi(){
   const region_id = document.getElementById("inputDaerah").value;
   if(!region_id) return alert("Pilih daerah dulu Bos ??");
+  if(transaksiDraft.length === 0) return alert("Belum ada item transaksi ??");
 
-  const rows = document.querySelectorAll("#inputTable tr");
-  if(rows.length === 0) return alert("Tambah minimal 1 baris transaksi Bos ??");
+  const date = new Date().toISOString().slice(0,10);
+  const total_omset = transaksiDraft.reduce((s,x)=>s+Number(x.omset||0),0);
+  const total_hpp = transaksiDraft.reduce((s,x)=>s+Number(x.hpp||0),0);
+  const total_margin = transaksiDraft.reduce((s,x)=>s+Number(x.margin||0),0);
 
-  let items = [];
-  let total_omset = 0;
-  let total_hpp = 0;
-  let total_margin = 0;
-
-  rows.forEach(tr=>{
-    const sel = tr.querySelector(".row-produk");
-    const qty = Number(tr.querySelector(".row-qty").value || 0);
-    const price = Number(tr.querySelector(".row-price").value || 0);
-
-    if(!sel.value || !qty || !price) return;
-
-    const opt = sel.selectedOptions[0];
-    const hpp = Number(opt.dataset.hpp || 0);
-
-    const omset = qty * price;
-    const hppTotal = qty * hpp;
-    const margin = omset - hppTotal;
-
-    items.push({
-      product_id: sel.value,
-      qty,
-      price,
-      omset,
-      hpp: hppTotal,
-      margin
-    });
-
-    total_omset += omset;
-    total_hpp += hppTotal;
-    total_margin += margin;
-  });
-
-  if(items.length === 0) return alert("Isi baris transaksi dengan benar Bos ??");
-
-  const { data:trx, error:err1 } = await sb
+  const { data:trx, error } = await sb
     .from("transactions")
     .insert({
+      date,
       region_id,
-      date: new Date().toISOString().slice(0,10),
       total_omset,
       total_hpp,
       total_margin
@@ -1861,26 +1895,25 @@ async function simpanTransaksi(){
     .select()
     .single();
 
-  if(err1) return alert("Gagal simpan transaksi: " + err1.message);
+  if(error) return alert("Gagal simpan transaksi: " + error.message);
 
-  const itemsPayload = items.map(i => ({
+  const items = transaksiDraft.map(r=>({
     transaction_id: trx.id,
-    product_id: i.product_id,
-    qty: i.qty,
-    price: i.price,
-    omset: i.omset,
-    hpp: i.hpp,
-    margin: i.margin
+    product_id: r.product_id,
+    qty: r.qty,
+    price: r.price,
+    omset: r.omset,
+    hpp: r.hpp,
+    margin: r.margin
   }));
 
-  const { error:err2 } = await sb.from("transaction_items").insert(itemsPayload);
+  const { error:err2 } = await sb.from("transaction_items").insert(items);
   if(err2) return alert("Gagal simpan item transaksi: " + err2.message);
 
+  transaksiDraft = [];
+  renderInput();
+  refreshDashboard();
   alert("Transaksi berhasil disimpan Bos ??");
-
-  document.getElementById("inputTable").innerHTML = "";
-  tambahBaris();
-  hitungTotal();
 }
 
 /* ================= LAPORAN ================= */
@@ -1899,10 +1932,10 @@ async function refreshLaporan(){
       omset,
       hpp,
       margin,
-      transactions(date, region_id, regions(name)),
-      products(name)
+      transactions(date, region_id),
+      products(id, name)
     `)
-    .order("created_at", { ascending:false });
+    .order("created_at",{ascending:false});
 
   if(from) query = query.gte("transactions.date", from);
   if(to) query = query.lte("transactions.date", to);
@@ -1912,88 +1945,101 @@ async function refreshLaporan(){
   const { data, error } = await query;
   if(error) return alert("Gagal load laporan: " + error.message);
 
-  renderLaporan(data || []);
-}
+  const rows = data || [];
 
-function resetFilter(){
-  ["filterFrom","filterTo"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("filterProduk").value = "";
-  document.getElementById("filterDaerah").value = "";
-  refreshLaporan();
-}
+  let totalOmset = 0;
+  let totalHPP = 0;
+  let totalMargin = 0;
 
-function renderLaporan(data){
-  let totalOmset = 0, totalHPP = 0, totalMargin = 0;
+  const mapProduk = {};
 
-  const byProduct = {};
-  const tbodyDetail = document.getElementById("lapDetailTable");
-  tbodyDetail.innerHTML = "";
-
-  data.forEach(r=>{
-    const date = r.transactions?.date || "-";
-    const region = r.transactions?.regions?.name || "-";
-    const product = r.products?.name || "-";
-
+  rows.forEach(r=>{
     totalOmset += Number(r.omset||0);
     totalHPP += Number(r.hpp||0);
     totalMargin += Number(r.margin||0);
 
-    if(!byProduct[product]){
-      byProduct[product] = { qty:0, omset:0, hpp:0, margin:0 };
+    const pid = r.products?.id;
+    if(pid){
+      if(!mapProduk[pid]){
+        mapProduk[pid] = {
+          name: r.products.name,
+          qty:0,
+          omset:0,
+          hpp:0,
+          margin:0
+        };
+      }
+      mapProduk[pid].qty += Number(r.qty||0);
+      mapProduk[pid].omset += Number(r.omset||0);
+      mapProduk[pid].hpp += Number(r.hpp||0);
+      mapProduk[pid].margin += Number(r.margin||0);
     }
-    byProduct[product].qty += Number(r.qty||0);
-    byProduct[product].omset += Number(r.omset||0);
-    byProduct[product].hpp += Number(r.hpp||0);
-    byProduct[product].margin += Number(r.margin||0);
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${date}</td>
-      <td>${region}</td>
-      <td>${product}</td>
-      <td>${r.qty}</td>
-      <td class="right">${rupiah(r.price)}</td>
-      <td class="right">${rupiah(r.omset)}</td>
-      <td class="right">${rupiah(r.hpp)}</td>
-      <td class="right">${rupiah(r.margin)}</td>
-    `;
-    tbodyDetail.appendChild(tr);
   });
 
   document.getElementById("lapTotalOmset").innerText = rupiah(totalOmset);
   document.getElementById("lapTotalHPP").innerText = rupiah(totalHPP);
   document.getElementById("lapTotalMargin").innerText = rupiah(totalMargin);
 
-  renderDistribusiLaporan(totalMargin);
-  renderLaporanPerProduk(byProduct);
+  renderLaporanDistribusi(totalMargin);
+  renderLaporanProduk(mapProduk);
+  renderLaporanDetail(rows);
 }
 
-function renderDistribusiLaporan(totalMargin){
+function resetFilter(){
+  document.getElementById("filterFrom").value = "";
+  document.getElementById("filterTo").value = "";
+  document.getElementById("filterProduk").value = "";
+  document.getElementById("filterDaerah").value = "";
+  refreshLaporan();
+}
+
+function renderLaporanDistribusi(totalMargin){
   const wrap = document.getElementById("lapDistribusi");
   wrap.innerHTML = "";
 
-  distribusi.filter(d=>d.active).forEach(d=>{
-    const val = totalMargin * (Number(d.percent||0)/100);
+  distribusi.filter(d=>d.active).forEach(d => {
+    const persen = Number(d.percentage||d.percent||0);
+    const nilai = totalMargin * persen / 100;
+
     const div = document.createElement("div");
     div.className = "card stat";
     div.innerHTML = `
-      <div class="label">${d.name}</div>
-      <div class="value">${rupiah(val)}</div>
+      <div class="label">${d.name} (${persen}%)</div>
+      <div class="value">${rupiah(nilai)}</div>
     `;
     wrap.appendChild(div);
   });
 }
 
-function renderLaporanPerProduk(map){
+function renderLaporanProduk(mapProduk){
   const tbody = document.getElementById("lapProdukTable");
   tbody.innerHTML = "";
 
-  Object.keys(map).forEach(name=>{
-    const r = map[name];
+  Object.values(mapProduk).forEach(p=>{
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${name}</td>
+      <td>${p.name}</td>
+      <td>${p.qty}</td>
+      <td class="right">${rupiah(p.omset)}</td>
+      <td class="right">${rupiah(p.hpp)}</td>
+      <td class="right">${rupiah(p.margin)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderLaporanDetail(rows){
+  const tbody = document.getElementById("lapDetailTable");
+  tbody.innerHTML = "";
+
+  rows.forEach(r=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${r.transactions?.date || "-"}</td>
+      <td>${daerah.find(d=>d.id===r.transactions?.region_id)?.name || "-"}</td>
+      <td>${r.products?.name || "-"}</td>
       <td>${r.qty}</td>
+      <td class="right">${rupiah(r.price)}</td>
       <td class="right">${rupiah(r.omset)}</td>
       <td class="right">${rupiah(r.hpp)}</td>
       <td class="right">${rupiah(r.margin)}</td>
@@ -2003,33 +2049,24 @@ function renderLaporanPerProduk(map){
 }
 
 async function hapusSemuaTransaksi(){
-  if(!confirm("INI AKAN MENGHAPUS SEMUA TRANSAKSI. YAKIN? ??")) return;
-
-  const { error:err1 } = await sb.from("transaction_items").delete().neq("id","");
-  if(err1) return alert(err1.message);
-
-  const { error:err2 } = await sb.from("transactions").delete().neq("id","");
+  if(!confirm("Yakin mau hapus SEMUA transaksi? ?? Ini permanen Bos.")) return;
+  const { error } = await sb.from("transaction_items").delete().neq("id","00000000-0000-0000-0000-000000000000");
+  if(error) return alert(error.message);
+  const { error:err2 } = await sb.from("transactions").delete().neq("id","00000000-0000-0000-0000-000000000000");
   if(err2) return alert(err2.message);
-
-  alert("Semua transaksi berhasil dihapus Bos ??");
-  refreshLaporan();
+  alert("Semua transaksi sudah dihapus ??");
+  refreshDashboard();
 }
 
 /* ================= INIT ================= */
-async function init(){
+(async ()=>{
   await loadProduk();
   await loadDaerah();
   await loadZones();
   await loadDistribusi();
   await loadMitra();
-
-  renderDashboardFilterDaerah();
   showTab("dashboard");
-}
-
-document.getElementById("mitraDaerah").addEventListener("change", loadZonaByDaerah);
-
-init();
+})();
 </script>
 
 </body>
