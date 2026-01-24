@@ -867,15 +867,15 @@ async function loadDaerah(){
 async function loadZones(){
   const { data, error } = await sb
     .from("zones")
-    .select("*")
+    .select("*, regions(name)")
     .order("created_at");
 
   if(error) return alert("Gagal load zona: " + error.message);
   zones = data || [];
   renderZona();
+  renderSelectZonaDaerah();
   loadZonaByDaerah();
 }
-
 /* ========= LOAD MITRA (PAGINATION + FILTER STATUS) ========= */
 async function loadMitra(){
   const statusFilter = document.getElementById("filterVisit")?.value || "";
@@ -1758,19 +1758,19 @@ async function hapusDistribusi(id){
 
 function renderDistribusiRealtime(){
   const wrap = document.getElementById("distribusiResult");
+  if(!wrap) return;
+
   wrap.innerHTML = "";
 
-  const totalMargin = transaksiDraft.reduce((s,x)=>s+Number(x.margin||0),0);
+  const totalMargin = transaksiDraft.reduce((s,i)=>s+(i.margin||0),0);
 
-  distribusi.filter(d=>d.active).forEach(d => {
-    const persen = Number(d.percentage||d.percent||0);
-    const nilai = totalMargin * persen / 100;
-
+  distribusi.filter(d=>d.active).forEach(d=>{
+    const val = totalMargin * (Number(d.percent||0)/100);
     const div = document.createElement("div");
     div.className = "dist-box";
     div.innerHTML = `
-      <div class="name">${d.name} (${persen}%)</div>
-      <div class="value">${rupiah(nilai)}</div>
+      <div class="name">${d.name}</div>
+      <div class="value">${rupiah(val)}</div>
     `;
     wrap.appendChild(div);
   });
@@ -2059,7 +2059,36 @@ async function hapusSemuaTransaksi(){
   alert("Semua transaksi sudah dihapus ??");
   refreshDashboard();
 }
+function renderSelectDaerahGlobal(){
+  const selects = [
+    "zonaDaerah",
+    "mitraDaerah",
+    "inputDaerah",
+    "filterDaerah",
+    "dashboardDaerah"
+  ];
 
+  selects.forEach(id=>{
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    sel.innerHTML = `<option value="">-- pilih daerah --</option>` +
+      daerah.filter(d=>d.active).map(d=>`<option value="${d.id}">${d.name}</option>`).join("");
+  });
+}
+
+function renderSelectMitraDaerah(){
+  const sel = document.getElementById("mitraDaerah");
+  if(!sel) return;
+  sel.innerHTML = `<option value="">-- pilih daerah --</option>` +
+    daerah.filter(d=>d.active).map(d=>`<option value="${d.id}">${d.name}</option>`).join("");
+}
+
+function renderSelectZonaDaerah(){
+  const sel = document.getElementById("zonaDaerah");
+  if(!sel) return;
+  sel.innerHTML = `<option value="">-- pilih daerah --</option>` +
+    daerah.filter(d=>d.active).map(d=>`<option value="${d.id}">${d.name}</option>`).join("");
+}
 /* ================= INIT ================= */
 (async ()=>{
   await loadProduk();
