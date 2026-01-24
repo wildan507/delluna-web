@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Tita • Akuntan Digital</title>
+  <title>Tita ï¿½ Akuntan Digital</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -395,7 +395,7 @@
 </head>
 <body>
 
-<header>Tita • Akuntan Digital</header>
+<header>Tita ï¿½ Akuntan Digital</header>
 
 <nav>
   <button id="tab-dashboard" onclick="showTab('dashboard')">Dashboard</button>
@@ -1929,9 +1929,7 @@ async function refreshLaporan(){
       id,
       qty,
       price,
-      omset,
       hpp,
-      margin,
       transactions(date, region_id),
       products(id, name)
     `)
@@ -1954,9 +1952,13 @@ async function refreshLaporan(){
   const mapProduk = {};
 
   rows.forEach(r=>{
-    totalOmset += Number(r.omset||0);
-    totalHPP += Number(r.hpp||0);
-    totalMargin += Number(r.margin||0);
+    const omset = Number(r.qty||0) * Number(r.price||0);
+    const hppTotal = Number(r.qty||0) * Number(r.hpp||0);
+    const margin = omset - hppTotal;
+
+    totalOmset += omset;
+    totalHPP += hppTotal;
+    totalMargin += margin;
 
     const pid = r.products?.id;
     if(pid){
@@ -1970,9 +1972,9 @@ async function refreshLaporan(){
         };
       }
       mapProduk[pid].qty += Number(r.qty||0);
-      mapProduk[pid].omset += Number(r.omset||0);
-      mapProduk[pid].hpp += Number(r.hpp||0);
-      mapProduk[pid].margin += Number(r.margin||0);
+      mapProduk[pid].omset += omset;
+      mapProduk[pid].hpp += hppTotal;
+      mapProduk[pid].margin += margin;
     }
   });
 
