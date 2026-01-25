@@ -944,15 +944,16 @@ async function refreshDashboard() {
       date,
       total_omset,
       total_margin,
-      transaction_items(qty)
+      region_id
     `);
 
-  query = safeEq(query, "region_id", filterDaerah);
+  if(filterDaerah) query = query.eq("region_id", filterDaerah);
 
   const { data, error } = await query;
   if(error) return alert("Gagal load dashboard: " + error.message);
 
-  const transaksiBulan = (data||[]).filter(t => t.date?.startsWith(bulanKey));
+  const rows = data || [];
+  const transaksiBulan = rows.filter(t => t.date?.startsWith(bulanKey));
 
   const totalProduk = produk.filter(p => p.active).length;
   const totalTransaksi = transaksiBulan.length;
@@ -961,8 +962,8 @@ async function refreshDashboard() {
   let totalMargin = 0;
 
   transaksiBulan.forEach(t => {
-    totalOmset += Number(t.total_omset||0);
-    totalMargin += Number(t.total_margin||0);
+    totalOmset += Number(t.total_omset || 0);
+    totalMargin += Number(t.total_margin || 0);
   });
 
   const totalMitra = mitra.length;
@@ -973,7 +974,7 @@ async function refreshDashboard() {
   document.getElementById("dashOmset").innerText = rupiah(totalOmset);
   document.getElementById("dashMargin").innerText = rupiah(totalMargin);
 
-  renderDashboardCharts(data||[]);
+  renderDashboardCharts(transaksiBulan);
 }
 
 function renderDashboardCharts(dataSource){
