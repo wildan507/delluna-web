@@ -1875,6 +1875,8 @@ function hitungTotal(){
 }
 
 async function simpanTransaksi(){
+  console.log("🔥 simpanTransaksi terpanggil", new Date().toISOString());
+
   const region_id = document.getElementById("inputDaerah").value;
   if(!region_id) return alert("Pilih daerah dulu Bos 😌");
   if(transaksiDraft.length === 0) return alert("Belum ada item transaksi 😏");
@@ -1897,7 +1899,7 @@ async function simpanTransaksi(){
     product_id: r.product_id,
     qty: r.qty,
     price: r.price,
-    hpp: r.hpp   // ✅ PENTING
+    hpp: r.hpp
   }));
 
   const { error:err2 } = await sb.from("transaction_items").insert(items);
