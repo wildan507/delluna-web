@@ -1875,22 +1875,16 @@ function hitungTotal(){
 
 async function simpanTransaksi(){
   const region_id = document.getElementById("inputDaerah").value;
-  if(!region_id) return alert("Pilih daerah dulu Bos ??");
-  if(transaksiDraft.length === 0) return alert("Belum ada item transaksi ??");
+  if(!region_id) return alert("Pilih daerah dulu Bos 😌");
+  if(transaksiDraft.length === 0) return alert("Belum ada item transaksi 😏");
 
   const date = new Date().toISOString().slice(0,10);
-  const total_omset = transaksiDraft.reduce((s,x)=>s+Number(x.omset||0),0);
-  const total_hpp = transaksiDraft.reduce((s,x)=>s+Number(x.hpp||0),0);
-  const total_margin = transaksiDraft.reduce((s,x)=>s+Number(x.margin||0),0);
 
   const { data:trx, error } = await sb
     .from("transactions")
     .insert({
       date,
-      region_id,
-      total_omset,
-      total_hpp,
-      total_margin
+      region_id
     })
     .select()
     .single();
@@ -1901,10 +1895,7 @@ async function simpanTransaksi(){
     transaction_id: trx.id,
     product_id: r.product_id,
     qty: r.qty,
-    price: r.price,
-    omset: r.omset,
-    hpp: r.hpp,
-    margin: r.margin
+    price: r.price
   }));
 
   const { error:err2 } = await sb.from("transaction_items").insert(items);
@@ -1913,7 +1904,7 @@ async function simpanTransaksi(){
   transaksiDraft = [];
   renderInput();
   refreshDashboard();
-  alert("Transaksi berhasil disimpan Bos ??");
+  alert("Transaksi berhasil disimpan Bos 😘");
 }
 
 /* ================= LAPORAN ================= */
