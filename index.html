@@ -981,6 +981,7 @@ async function refreshDashboard() {
   document.getElementById("dashOmset").innerText = rupiah(totalOmset);
   document.getElementById("dashMargin").innerText = rupiah(totalMargin);
 
+  console.log("DATA KE GRAFIK:", transaksiBulan);
   renderDashboardCharts(transaksiBulan);
 }
 
