@@ -942,9 +942,12 @@ async function refreshDashboard() {
     .select(`
       id,
       date,
-      total_omset,
-      total_margin,
-      region_id
+      region_id,
+      transaction_items (
+        qty,
+        price,
+        hpp
+      )
     `);
 
   if(filterDaerah) query = query.eq("region_id", filterDaerah);
@@ -962,8 +965,12 @@ async function refreshDashboard() {
   let totalMargin = 0;
 
   transaksiBulan.forEach(t => {
-    totalOmset += Number(t.total_omset || 0);
-    totalMargin += Number(t.total_margin || 0);
+    t.transaction_items.forEach(i => {
+      const omset = i.qty * i.price;
+      const margin = omset - (i.qty * i.hpp);
+      totalOmset += omset;
+      totalMargin += margin;
+    });
   });
 
   const totalMitra = mitra.length;
@@ -1875,19 +1882,24 @@ function hitungTotal(){
 }
 
 async function simpanTransaksi(){
-  console.log("🔥 simpanTransaksi terpanggil", new Date().toISOString());
-
   const region_id = document.getElementById("inputDaerah").value;
   if(!region_id) return alert("Pilih daerah dulu Bos 😌");
   if(transaksiDraft.length === 0) return alert("Belum ada item transaksi 😏");
 
   const date = new Date().toISOString().slice(0,10);
 
+  const total_omset = transaksiDraft.reduce((s,r)=>s + (r.qty * r.price),0);
+  const total_hpp = transaksiDraft.reduce((s,r)=>s + (r.qty * r.hpp),0);
+  const total_margin = total_omset - total_hpp;
+
   const { data:trx, error } = await sb
     .from("transactions")
     .insert({
       date,
-      region_id
+      region_id,
+      total_omset,
+      total_hpp,
+      total_margin
     })
     .select()
     .single();
