@@ -1895,7 +1895,8 @@ async function simpanTransaksi(){
     transaction_id: trx.id,
     product_id: r.product_id,
     qty: r.qty,
-    price: r.price
+    price: r.price,
+    hpp: r.hpp   // ✅ PENTING
   }));
 
   const { error:err2 } = await sb.from("transaction_items").insert(items);
