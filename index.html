@@ -834,21 +834,13 @@ function showTab(tab) {
     const btn = document.getElementById("tab-"+t);
     if(btn) btn.classList.remove("active");
   });
-
-  const activeTab = document.getElementById(tab+"Tab");
-  activeTab.classList.remove("hidden");
+  document.getElementById(tab+"Tab").classList.remove("hidden");
   const activeBtn = document.getElementById("tab-"+tab);
   if(activeBtn) activeBtn.classList.add("active");
 
   if (tab === "laporan") refreshLaporan();
+  if (tab === "dashboard") refreshDashboard();
   if (tab === "input") renderInput();
-
-  if (tab === "dashboard") {
-    // 🔥 tunggu DOM & layout benar-benar siap
-    setTimeout(() => {
-      refreshDashboard();
-    }, 50);
-  }
 }
 
 /* ================= LOAD MASTER DATA ================= */
@@ -998,26 +990,18 @@ async function refreshDashboard() {
 }
 let dashboardChart = null;
 
-let dashboardChart = null;
-
 function renderDashboardCharts(transaksi) {
-  console.log("📊 renderDashboardCharts jalan");
-
-  const canvas = document.getElementById("dashboardChart");
-  if (!canvas) {
-    console.warn("❌ canvas dashboardChart tidak ditemukan");
-    return;
-  }
+  const ctx = document.getElementById("dashboardChart");
+  if (!ctx) return;
 
   const mapTanggal = {};
 
   transaksi.forEach(t => {
     const d = t.date;
-    if (!d) return;
     if (!mapTanggal[d]) mapTanggal[d] = 0;
 
     (t.transaction_items || []).forEach(i => {
-      mapTanggal[d] += (Number(i.qty || 0) * Number(i.price || 0));
+      mapTanggal[d] += (i.qty * i.price);
     });
   });
 
@@ -1026,33 +1010,48 @@ function renderDashboardCharts(transaksi) {
 
   if (dashboardChart) dashboardChart.destroy();
 
-  dashboardChart = new Chart(canvas, {
+  dashboardChart = new Chart(ctx, {
     type: "line",
     data: {
       labels,
       datasets: [{
         label: "Omset Harian",
         data: values,
-        tension: 0.3,
-        fill: false,
-        borderWidth: 2,
-        pointRadius: 3
+        tension: 0.3
       }]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins:{
-        legend:{display:true}
-      },
-      scales:{
-        y:{
-          beginAtZero:true,
-          ticks:{ callback:v=>rupiah(v) }
-        }
-      }
+    options:{
+      responsive:true,
+      maintainAspectRatio:false
     }
   });
+}
+
+function renderDashboardCharts(dataSource){
+  const months = getLast6Months();
+
+  const omsetArr = new Array(6).fill(0);
+  const marginArr = new Array(6).fill(0);
+  const qtyArr = new Array(6).fill(0);
+
+  dataSource.forEach(t => {
+    if(!t.date) return;
+    const idx = months.findIndex(m => t.date.startsWith(m.key));
+    if (idx === -1) return;
+
+    omsetArr[idx] += Number(t.total_omset||0);
+    marginArr[idx] += Number(t.total_margin||0);
+
+    (t.transaction_items||[]).forEach(i => {
+      qtyArr[idx] += Number(i.qty||0);
+    });
+  });
+
+  const labels = months.map(m => m.label);
+
+  renderChartOmset6(labels, omsetArr);
+  renderChartMargin6(labels, marginArr);
+  renderChartQty6(labels, qtyArr);
 }
 
 function renderChartOmset6(labels, data){
