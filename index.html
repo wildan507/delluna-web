@@ -834,13 +834,21 @@ function showTab(tab) {
     const btn = document.getElementById("tab-"+t);
     if(btn) btn.classList.remove("active");
   });
-  document.getElementById(tab+"Tab").classList.remove("hidden");
+
+  const activeTab = document.getElementById(tab+"Tab");
+  activeTab.classList.remove("hidden");
   const activeBtn = document.getElementById("tab-"+tab);
   if(activeBtn) activeBtn.classList.add("active");
 
   if (tab === "laporan") refreshLaporan();
-  if (tab === "dashboard") refreshDashboard();
   if (tab === "input") renderInput();
+
+  if (tab === "dashboard") {
+    // 🔥 tunggu DOM & layout benar-benar siap
+    setTimeout(() => {
+      refreshDashboard();
+    }, 50);
+  }
 }
 
 /* ================= LOAD MASTER DATA ================= */
@@ -990,18 +998,26 @@ async function refreshDashboard() {
 }
 let dashboardChart = null;
 
+let dashboardChart = null;
+
 function renderDashboardCharts(transaksi) {
-  const ctx = document.getElementById("dashboardChart");
-  if (!ctx) return;
+  console.log("📊 renderDashboardCharts jalan");
+
+  const canvas = document.getElementById("dashboardChart");
+  if (!canvas) {
+    console.warn("❌ canvas dashboardChart tidak ditemukan");
+    return;
+  }
 
   const mapTanggal = {};
 
   transaksi.forEach(t => {
     const d = t.date;
+    if (!d) return;
     if (!mapTanggal[d]) mapTanggal[d] = 0;
 
     (t.transaction_items || []).forEach(i => {
-      mapTanggal[d] += (i.qty * i.price);
+      mapTanggal[d] += (Number(i.qty || 0) * Number(i.price || 0));
     });
   });
 
@@ -1010,19 +1026,31 @@ function renderDashboardCharts(transaksi) {
 
   if (dashboardChart) dashboardChart.destroy();
 
-  dashboardChart = new Chart(ctx, {
+  dashboardChart = new Chart(canvas, {
     type: "line",
     data: {
       labels,
       datasets: [{
         label: "Omset Harian",
         data: values,
-        tension: 0.3
+        tension: 0.3,
+        fill: false,
+        borderWidth: 2,
+        pointRadius: 3
       }]
     },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins:{
+        legend:{display:true}
+      },
+      scales:{
+        y:{
+          beginAtZero:true,
+          ticks:{ callback:v=>rupiah(v) }
+        }
+      }
     }
   });
 }
