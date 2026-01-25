@@ -447,7 +447,12 @@
         <div class="value" id="dashMargin">Rp 0</div>
       </div>
     </div>
-
+<div class="card" style="margin-top:16px;">
+  <h3>Omset Harian (Bulan Ini)</h3>
+  <div class="chart-wrap">
+    <canvas id="dashboardChart"></canvas>
+  </div>
+</div>
     <div class="grid grid-3" style="margin-top:16px;">
       <div class="card">
         <h3>Omset per Bulan (6 Bulan Terakhir)</h3>
@@ -934,8 +939,6 @@ function renderDashboardFilterDaerah(){
 }
 
 async function refreshDashboard() {
-  console.log("REFRESH DASHBOARD JALAN");
-
   const bulanKey = bulanIniISO();
   const filterDaerah = document.getElementById("dashboardDaerah")?.value;
 
@@ -983,35 +986,45 @@ async function refreshDashboard() {
   document.getElementById("dashOmset").innerText = rupiah(totalOmset);
   document.getElementById("dashMargin").innerText = rupiah(totalMargin);
 
-  console.log("DATA KE GRAFIK:", transaksiBulan);
   renderDashboardCharts(transaksiBulan);
 }
+let dashboardChart = null;
 
-function renderDashboardCharts(dataSource){
-  const months = getLast6Months();
+function renderDashboardCharts(transaksi) {
+  const ctx = document.getElementById("dashboardChart");
+  if (!ctx) return;
 
-  const omsetArr = new Array(6).fill(0);
-  const marginArr = new Array(6).fill(0);
-  const qtyArr = new Array(6).fill(0);
+  const mapTanggal = {};
 
-  dataSource.forEach(t => {
-    if(!t.date) return;
-    const idx = months.findIndex(m => t.date.startsWith(m.key));
-    if (idx === -1) return;
+  transaksi.forEach(t => {
+    const d = t.date;
+    if (!mapTanggal[d]) mapTanggal[d] = 0;
 
-    omsetArr[idx] += Number(t.total_omset||0);
-    marginArr[idx] += Number(t.total_margin||0);
-
-    (t.transaction_items||[]).forEach(i => {
-      qtyArr[idx] += Number(i.qty||0);
+    (t.transaction_items || []).forEach(i => {
+      mapTanggal[d] += (i.qty * i.price);
     });
   });
 
-  const labels = months.map(m => m.label);
+  const labels = Object.keys(mapTanggal).sort();
+  const values = labels.map(d => mapTanggal[d]);
 
-  renderChartOmset6(labels, omsetArr);
-  renderChartMargin6(labels, marginArr);
-  renderChartQty6(labels, qtyArr);
+  if (dashboardChart) dashboardChart.destroy();
+
+  dashboardChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: "Omset Harian",
+        data: values,
+        tension: 0.3
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false
+    }
+  });
 }
 
 function renderChartOmset6(labels, data){
