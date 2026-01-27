@@ -876,7 +876,9 @@ function showTab(tab) {
   if (tab === "laporan") refreshLaporan();
   if (tab === "dashboard") refreshDashboard();
   if (tab === "input") renderInput();
-  if (tab === "stok") refreshStok(); // ✅ TAMBAHAN
+  if (tab === "stok") {
+  initStokFilters();
+  refreshStok();
 }
 
 
@@ -1207,6 +1209,21 @@ async function refreshStok() {
   const hari = Number(document.getElementById("stokFilterHari").value || 30);
 
   console.log("Filter:", { regionId, productId, hari });
+}
+async function initStokFilters() {
+  // Daerah
+  const daerahSelect = document.getElementById("stokFilterDaerah");
+  daerahSelect.innerHTML = `<option value="">Semua Daerah</option>`;
+  regions.forEach(r => {
+    daerahSelect.innerHTML += `<option value="${r.id}">${r.name}</option>`;
+  });
+
+  // Produk
+  const produkSelect = document.getElementById("stokFilterProduk");
+  produkSelect.innerHTML = `<option value="">Semua Produk</option>`;
+  produk.forEach(p => {
+    produkSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+  });
 }
 
 /* ================= PRODUK ================= */
