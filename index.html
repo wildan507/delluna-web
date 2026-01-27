@@ -473,6 +473,45 @@
     </div>
   </div>
 
+<!-- ================= STOK ================= -->
+<div id="stokTab" class="hidden">
+  <h2>📦 Stok & Rekom Produksi</h2>
+
+  <div class="grid grid-3" style="margin-bottom:16px">
+    <div>
+      <label>Daerah</label>
+      <select id="stokFilterDaerah"></select>
+    </div>
+
+    <div>
+      <label>Produk</label>
+      <select id="stokFilterProduk"></select>
+    </div>
+
+    <div>
+      <label>Periode (hari ke belakang)</label>
+      <input type="number" id="stokFilterHari" value="30" min="1">
+    </div>
+  </div>
+
+  <button onclick="refreshStok()">🔄 Refresh</button>
+
+  <table style="margin-top:16px">
+    <thead>
+      <tr>
+        <th>Produk</th>
+        <th>Stok</th>
+        <th>Konsumsi</th>
+        <th>Stok Ideal</th>
+        <th>Max Stok</th>
+        <th>Rekom Produksi</th>
+        <th>Over Stok</th>
+      </tr>
+    </thead>
+    <tbody id="stokTable"></tbody>
+  </table>
+</div>
+
   <!-- ================= PRODUK ================= -->
   <div id="produkTab" class="hidden">
     <div class="card">
@@ -823,7 +862,7 @@ function getLast6Months(){
 
 /* ================= TAB NAV ================= */
 function showTab(tab) {
-  const tabs = ["dashboard","produk","daerah","zona","mitra","distribusi","input","laporan"];
+  const tabs = ["dashboard","stok","produk","daerah","zona","mitra","distribusi","input","laporan"];
   tabs.forEach(t => {
     const el = document.getElementById(t+"Tab");
     if(el) el.classList.add("hidden");
@@ -837,7 +876,9 @@ function showTab(tab) {
   if (tab === "laporan") refreshLaporan();
   if (tab === "dashboard") refreshDashboard();
   if (tab === "input") renderInput();
+  if (tab === "stok") refreshStok(); // ✅ TAMBAHAN
 }
+
 
 /* ================= LOAD MASTER DATA ================= */
 async function loadProduk(){
