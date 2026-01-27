@@ -1207,8 +1207,91 @@ async function refreshStok() {
   const hari = Number(document.getElementById("stokFilterHari").value || 30);
 
   console.log("Filter:", { regionId, productId, hari });
+
+  // ================== 1. Load produk ==================
+  let produkQuery = sb.from("products").select("id,name").order("name");
+  if (productId) produkQuery = produkQuery.eq("id", productId);
+  const { data: products } = await produkQuery;
+
+  // ================== 2. Load stok ==================
+  let stokQuery = sb.from("stocks").select("product_id, qty");
+  if (regionId) stokQuery = stokQuery.eq("region_id", regionId);
+  const { data: stocks } = await stokQuery;
+
+  const mapStok = {};
+  stocks?.forEach(s => {
+    if (!mapStok[s.product_id]) mapStok[s.product_id] = 0;
+    mapStok[s.product_id] += Number(s.qty || 0);
+  });
+
+  // ================== 3. Load konsumsi ==================
+  const fromDate = new Date();
+  fromDate.setDate(fromDate.getDate() - hari);
+  const fromStr = fromDate.toISOString().slice(0,10);
+
+  let konsumsiQuery = sb
+    .from("transaction_items")
+    .select("qty, product_id, transactions(date, region_id)")
+    .gte("transactions.date", fromStr);
+
+  if (regionId) konsumsiQuery = konsumsiQuery.eq("transactions.region_id", regionId);
+  if (productId) konsumsiQuery = konsumsiQuery.eq("product_id", productId);
+
+  const { data: konsumsi } = await konsumsiQuery;
+
+  const mapKonsumsi = {};
+  konsumsi?.forEach(k => {
+    if (!mapKonsumsi[k.product_id]) mapKonsumsi[k.product_id] = 0;
+    mapKonsumsi[k.product_id] += Number(k.qty || 0);
+  });
+
+  // ================== 4. Render tabel ==================
+  const tbody = document.getElementById("stokTable");
+  tbody.innerHTML = "";
+
+  products.forEach(p => {
+    const stok = mapStok[p.id] || 0;
+    const konsumsiVal = mapKonsumsi[p.id] || 0;
+
+    const stokIdeal = Math.ceil(1.5 * konsumsiVal);
+    const maxStok = Math.ceil(2 * stokIdeal);
+    const rekom = Math.max(stokIdeal - stok, 0);
+    const over = Math.max(stok - maxStok, 0);
+
+    const tr = document.createElement("tr");
+    if (over > 0) tr.style.background = "rgba(220,38,38,.15)";
+
+    tr.innerHTML = `
+      <td>${p.name}</td>
+      <td>${stok}</td>
+      <td>${konsumsiVal}</td>
+      <td>${stokIdeal}</td>
+      <td>${maxStok}</td>
+      <td>${rekom}</td>
+      <td style="color:${over>0?'#dc2626':'inherit'}">${over}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
+
+async function loadStokFilters(){
+  // Daerah
+  const { data: daerah } = await sb.from("regions").select("id,name").order("name");
+  const selDaerah = document.getElementById("stokFilterDaerah");
+  selDaerah.innerHTML = `<option value="">Semua Daerah</option>`;
+  daerah.forEach(d=>{
+    selDaerah.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+  });
+
+  // Produk
+  const { data: produk } = await sb.from("products").select("id,name").order("name");
+  const selProduk = document.getElementById("stokFilterProduk");
+  selProduk.innerHTML = `<option value="">Semua Produk</option>`;
+  produk.forEach(p=>{
+    selProduk.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+  });
+}
 
 /* ================= PRODUK ================= */
 function renderProduk() {
@@ -2166,6 +2249,7 @@ async function hapusSemuaTransaksi(){
   await loadZones();
   await loadDistribusi();
   await loadMitra();
+  await loadStokFilters();   // 👈 TAMBAH INI
   showTab("dashboard");
 })();
 </script>
