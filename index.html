@@ -1201,6 +1201,12 @@ function renderChartQty6(labels, data){
 /* ================= STOK ================= */
 async function refreshStok() {
   console.log("REFRESH STOK JALAN 😏");
+
+  const regionId = document.getElementById("stokFilterDaerah").value;
+  const productId = document.getElementById("stokFilterProduk").value;
+  const hari = Number(document.getElementById("stokFilterHari").value || 30);
+
+  console.log("Filter:", { regionId, productId, hari });
 }
 
 /* ================= PRODUK ================= */
