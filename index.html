@@ -1202,94 +1202,71 @@ function renderChartQty6(labels, data){
 async function refreshStok() {
   console.log("REFRESH STOK JALAN 😏");
 
-  const regionId = document.getElementById("stokFilterDaerah").value;
-  const productId = document.getElementById("stokFilterProduk").value;
+  const regionId = document.getElementById("stokFilterDaerah").value || null;
+  const productId = document.getElementById("stokFilterProduk").value || null;
   const hari = Number(document.getElementById("stokFilterHari").value || 30);
 
-  console.log("Filter:", { regionId, productId, hari });
+  const sejak = new Date();
+  sejak.setDate(sejak.getDate() - hari);
+  const sejakISO = sejak.toISOString().slice(0,10);
 
-  // ================== 1. Load produk ==================
-  let produkQuery = sb.from("products").select("id,name").order("name");
-  if (productId) produkQuery = produkQuery.eq("id", productId);
-  const { data: products } = await produkQuery;
+  // 1. Ambil stok
+  let stokQuery = sb
+    .from("stocks")
+    .select("qty, product_id, region_id, products(name)");
 
-  // ================== 2. Load stok ==================
-  let stokQuery = sb.from("stocks").select("product_id, qty");
-  if (regionId) stokQuery = stokQuery.eq("region_id", regionId);
-  const { data: stocks } = await stokQuery;
+  if(regionId) stokQuery = stokQuery.eq("region_id", regionId);
+  if(productId) stokQuery = stokQuery.eq("product_id", productId);
 
-  const mapStok = {};
-  stocks?.forEach(s => {
-    if (!mapStok[s.product_id]) mapStok[s.product_id] = 0;
-    mapStok[s.product_id] += Number(s.qty || 0);
-  });
+  const { data:stokRows, error:errStok } = await stokQuery;
+  if(errStok) return alert("Gagal load stok: " + errStok.message);
 
-  // ================== 3. Load konsumsi ==================
-  const fromDate = new Date();
-  fromDate.setDate(fromDate.getDate() - hari);
-  const fromStr = fromDate.toISOString().slice(0,10);
-
+  // 2. Ambil konsumsi
   let konsumsiQuery = sb
     .from("transaction_items")
-    .select("qty, product_id, transactions(date, region_id)")
-    .gte("transactions.date", fromStr);
+    .select(`
+      qty,
+      product_id,
+      transactions(date, region_id)
+    `)
+    .gte("transactions.date", sejakISO);
 
-  if (regionId) konsumsiQuery = konsumsiQuery.eq("transactions.region_id", regionId);
-  if (productId) konsumsiQuery = konsumsiQuery.eq("product_id", productId);
+  if(regionId) konsumsiQuery = konsumsiQuery.eq("transactions.region_id", regionId);
+  if(productId) konsumsiQuery = konsumsiQuery.eq("product_id", productId);
 
-  const { data: konsumsi } = await konsumsiQuery;
+  const { data:konsumsiRows, error:errKonsumsi } = await konsumsiQuery;
+  if(errKonsumsi) return alert("Gagal load konsumsi: " + errKonsumsi.message);
 
+  // 3. Map konsumsi
   const mapKonsumsi = {};
-  konsumsi?.forEach(k => {
-    if (!mapKonsumsi[k.product_id]) mapKonsumsi[k.product_id] = 0;
-    mapKonsumsi[k.product_id] += Number(k.qty || 0);
+  (konsumsiRows||[]).forEach(r=>{
+    if(!mapKonsumsi[r.product_id]) mapKonsumsi[r.product_id] = 0;
+    mapKonsumsi[r.product_id] += Number(r.qty||0);
   });
 
-  // ================== 4. Render tabel ==================
+  // 4. Render
   const tbody = document.getElementById("stokTable");
   tbody.innerHTML = "";
 
-  products.forEach(p => {
-    const stok = mapStok[p.id] || 0;
-    const konsumsiVal = mapKonsumsi[p.id] || 0;
-
-    const stokIdeal = Math.ceil(1.5 * konsumsiVal);
-    const maxStok = Math.ceil(2 * stokIdeal);
+  (stokRows||[]).forEach(r=>{
+    const stok = Number(r.qty||0);
+    const konsumsi = Number(mapKonsumsi[r.product_id]||0);
+    const stokIdeal = Math.ceil(1.5 * konsumsi);
+    const maxStok = stokIdeal * 2;
     const rekom = Math.max(stokIdeal - stok, 0);
     const over = Math.max(stok - maxStok, 0);
 
     const tr = document.createElement("tr");
-    if (over > 0) tr.style.background = "rgba(220,38,38,.15)";
-
     tr.innerHTML = `
-      <td>${p.name}</td>
-      <td>${stok}</td>
-      <td>${konsumsiVal}</td>
-      <td>${stokIdeal}</td>
-      <td>${maxStok}</td>
-      <td>${rekom}</td>
-      <td style="color:${over>0?'#dc2626':'inherit'}">${over}</td>
+      <td>${r.products?.name || "-"}</td>
+      <td class="right">${stok}</td>
+      <td class="right">${konsumsi}</td>
+      <td class="right">${stokIdeal}</td>
+      <td class="right">${maxStok}</td>
+      <td class="right">${rekom}</td>
+      <td class="right ${over>0?"danger":""}">${over>0?over:"-"}</td>
     `;
     tbody.appendChild(tr);
-  });
-}
-
-
-async function loadStokFilters(){
-  // Daerah
-  const { data: daerah } = await sb.from("regions").select("id,name").order("name");
-  const selDaerah = document.getElementById("stokFilterDaerah");
-  selDaerah.innerHTML = `<option value="">Semua Daerah</option>`;
-  daerah.forEach(d=>{
-    selDaerah.innerHTML += `<option value="${d.id}">${d.name}</option>`;
-  });
-
-  // Produk
-  const { data: produk } = await sb.from("products").select("id,name").order("name");
-  const selProduk = document.getElementById("stokFilterProduk");
-  selProduk.innerHTML = `<option value="">Semua Produk</option>`;
-  produk.forEach(p=>{
-    selProduk.innerHTML += `<option value="${p.id}">${p.name}</option>`;
   });
 }
 
