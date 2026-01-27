@@ -2166,12 +2166,12 @@ function renderLaporanDetail(rows){
 }
 
 async function hapusSemuaTransaksi(){
-  if(!confirm("Yakin mau hapus SEMUA transaksi? ?? Ini permanen Bos.")) return;
+  if(!confirm("Yakin mau hapus SEMUA transaksi? 😅 Ini permanen Bos.")) return;
   const { error } = await sb.from("transaction_items").delete().neq("id","00000000-0000-0000-0000-000000000000");
   if(error) return alert(error.message);
   const { error:err2 } = await sb.from("transactions").delete().neq("id","00000000-0000-0000-0000-000000000000");
   if(err2) return alert(err2.message);
-  alert("Semua transaksi sudah dihapus ??");
+  alert("Semua transaksi sudah dihapus 😘");
   refreshDashboard();
 }
 
