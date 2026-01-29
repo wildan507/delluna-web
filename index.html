@@ -96,7 +96,13 @@
       box-shadow:0 20px 40px rgba(0,0,0,.8),
                  inset 0 1px 0 rgba(255,255,255,.05);
     }
-
+    .danger {
+      color: #dc2626;
+      font-weight: 700;
+      background: rgba(220,38,38,.12);
+      border-radius: 6px;
+      padding: 2px 6px;
+    }
     .dropdown:hover .dropdown-menu{
       display:block;
     }
@@ -1257,15 +1263,20 @@ async function refreshStok() {
     const over = Math.max(stok - maxStok, 0);
 
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${r.products?.name || "-"}</td>
-      <td class="right">${stok}</td>
-      <td class="right">${konsumsi}</td>
-      <td class="right">${stokIdeal}</td>
-      <td class="right">${maxStok}</td>
-      <td class="right">${rekom}</td>
-      <td class="right ${over>0?"danger":""}">${over>0?over:"-"}</td>
-    `;
+
+const overHtml = over > 0
+  ? `⚠️ ${over}`
+  : "-";
+
+tr.innerHTML = `
+  <td>${r.products?.name || "-"}</td>
+  <td class="right">${stok}</td>
+  <td class="right">${konsumsi}</td>
+  <td class="right">${stokIdeal}</td>
+  <td class="right">${maxStok}</td>
+  <td class="right">${rekom}</td>
+  <td class="right ${over>0 ? "danger" : ""}">${overHtml}</td>
+`;
     tbody.appendChild(tr);
   });
 }
