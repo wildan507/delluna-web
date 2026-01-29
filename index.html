@@ -1950,6 +1950,20 @@ function renderFilterProduk(){
   sel.innerHTML = `<option value="">Semua Produk</option>` +
     produk.filter(p=>p.active).map(p => `<option value="${p.id}">${p.name}</option>`).join("");
 }
+function renderStokFilters(){
+  const selDaerah = document.getElementById("stokFilterDaerah");
+  const selProduk = document.getElementById("stokFilterProduk");
+
+  if(selDaerah){
+    selDaerah.innerHTML = `<option value="">Semua Daerah</option>` +
+      daerah.filter(d=>d.active).map(d=>`<option value="${d.id}">${d.name}</option>`).join("");
+  }
+
+  if(selProduk){
+    selProduk.innerHTML = `<option value="">Semua Produk</option>` +
+      produk.filter(p=>p.active).map(p=>`<option value="${p.id}">${p.name}</option>`).join("");
+  }
+}
 
 function tambahBaris(){
   transaksiDraft.push({
@@ -2226,6 +2240,7 @@ async function hapusSemuaTransaksi(){
   await loadZones();
   await loadDistribusi();
   await loadMitra();
+  renderStokFilters();
   showTab("dashboard");
 })();
 </script>
