@@ -1250,36 +1250,41 @@ async function refreshStok() {
     mapKonsumsi[r.product_id] += Number(r.qty||0);
   });
 
-  // 4. Render
-  const tbody = document.getElementById("stokTable");
-  tbody.innerHTML = "";
+  // 4. Render (pakai semua produk, bukan cuma stokRows)
+const tbody = document.getElementById("stokTable");
+tbody.innerHTML = "";
 
-  (stokRows||[]).forEach(r=>{
-    const stok = Number(r.qty||0);
-    const konsumsi = Number(mapKonsumsi[r.product_id]||0);
-    const stokIdeal = Math.ceil(1.5 * konsumsi);
-    const maxStok = stokIdeal * 2;
-    const rekom = Math.max(stokIdeal - stok, 0);
-    const over = Math.max(stok - maxStok, 0);
+// map stok per product
+const mapStok = {};
+(stokRows || []).forEach(r => {
+  mapStok[r.product_id] = Number(r.qty || 0);
+});
 
-    const tr = document.createElement("tr");
+(produk || []).forEach(p => {
+  const stok = Number(mapStok[p.id] || 0);
+  const konsumsi = Number(mapKonsumsi[p.id] || 0);
+  const stokIdeal = Math.ceil(1.5 * konsumsi);
+  const maxStok = stokIdeal * 2;
+  const rekom = Math.max(stokIdeal - stok, 0);
+  const over = Math.max(stok - maxStok, 0);
 
-const overHtml = over > 0
-  ? `⚠️ ${over}`
-  : "-";
+  const tr = document.createElement("tr");
 
-tr.innerHTML = `
-  <td>${r.products?.name || "-"}</td>
-  <td class="right">${stok}</td>
-  <td class="right">${konsumsi}</td>
-  <td class="right">${stokIdeal}</td>
-  <td class="right">${maxStok}</td>
-  <td class="right">${rekom}</td>
-  <td class="right ${over>0 ? "danger" : ""}">${overHtml}</td>
-`;
-    tbody.appendChild(tr);
-  });
-}
+  const overHtml = over > 0 ? `⚠️ ${over}` : "-";
+
+  tr.innerHTML = `
+    <td>${p.name}</td>
+    <td class="right">${stok}</td>
+    <td class="right">${konsumsi}</td>
+    <td class="right">${stokIdeal}</td>
+    <td class="right">${maxStok}</td>
+    <td class="right">${rekom}</td>
+    <td class="right ${over>0 ? "danger" : ""}">${overHtml}</td>
+  `;
+
+  tbody.appendChild(tr);
+});
+
 
 /* ================= PRODUK ================= */
 function renderProduk() {
@@ -2223,7 +2228,7 @@ function renderLaporanDetail(rows){
     tr.innerHTML = `
       <td>${r.transactions?.date || "-"}</td>
       <td>${daerah.find(d=>d.id===r.transactions?.region_id)?.name || "-"}</td>
-      <td>${r.products?.name || "-"}</td>
+      <td>${p.name}</td>
       <td>${r.qty}</td>
       <td class="right">${rupiah(r.price)}</td>
       <td class="right">${rupiah(r.omset)}</td>
