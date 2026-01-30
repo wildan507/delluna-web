@@ -1325,22 +1325,44 @@ async function tambahProduk() {
 
   if (!nama || !hpp || !price) return alert("Isi nama, HPP & harga dulu Bos ??");
 
-  const { error } = await sb.from("products").insert({
-    name: nama,
-    hpp,
-    price,
-    active: true
-  });
+  // 1. Insert produk & ambil ID-nya
+  const { data: produkBaru, error } = await sb
+    .from("products")
+    .insert({
+      name: nama,
+      hpp,
+      price,
+      active: true
+    })
+    .select()
+    .single();
 
-  if(error) return alert("Gagal simpan produk: " + error.message);
+  if (error) return alert("Gagal simpan produk: " + error.message);
 
+  // 2. Ambil semua daerah
+  const { data: regions, error: errRegion } = await sb
+    .from("regions")
+    .select("id");
+
+  if (errRegion) return alert("Gagal ambil daerah: " + errRegion.message);
+
+  // 3. Buat stok awal = 0 untuk semua daerah
+  const stokRows = regions.map(r => ({
+    product_id: produkBaru.id,
+    region_id: r.id,
+    qty: 0
+  }));
+
+  const { error: errStok } = await sb.from("stocks").insert(stokRows);
+  if (errStok) return alert("Gagal buat stok awal: " + errStok.message);
+
+  // 4. Reset form + reload
   document.getElementById("namaProduk").value = "";
   document.getElementById("hppProduk").value = "";
   document.getElementById("hargaProduk").value = "";
 
   loadProduk();
 }
-
 async function toggleProduk(id) {
   if(!isValidUUID(id)) return;
   const p = produk.find(x => x.id === id);
