@@ -1270,7 +1270,15 @@ const overHtml = over > 0
 
 tr.innerHTML = `
   <td>${r.products?.name || "-"}</td>
-  <td class="right">${stok}</td>
+  <td class="right">
+  <input 
+    type="number" 
+    min="0" 
+    value="${stok}" 
+    style="width:70px;text-align:right"
+    onchange="updateStok('${r.product_id}','${r.region_id}',this.value)"
+  >
+</td>
   <td class="right">${konsumsi}</td>
   <td class="right">${stokIdeal}</td>
   <td class="right">${maxStok}</td>
@@ -1279,6 +1287,20 @@ tr.innerHTML = `
 `;
     tbody.appendChild(tr);
   });
+}
+async function updateStok(productId, regionId, newQty) {
+  const qty = Number(newQty);
+  if (isNaN(qty) || qty < 0) return alert("Stok harus >= 0");
+
+  const { error } = await sb
+    .from("stocks")
+    .update({ qty })
+    .eq("product_id", productId)
+    .eq("region_id", regionId);
+
+  if (error) return alert("Gagal update stok: " + error.message);
+
+  refreshStok();
 }
 
 /* ================= PRODUK ================= */
