@@ -507,6 +507,7 @@
       <tr>
         <th>Produk</th>
         <th>Stok</th>
+        <th>Stok Fisik</th>
         <th>Konsumsi</th>
         <th>Stok Ideal</th>
         <th>Max Stok</th>
@@ -1277,6 +1278,15 @@ tr.innerHTML = `
     value="${stok}" 
     style="width:70px;text-align:right"
     onchange="updateStok('${r.product_id}','${r.region_id}',this.value)"
+  >
+</td>
+<td class="right">
+  <input 
+    type="number"
+    min="0"
+    placeholder="fisik"
+    style="width:70px;text-align:right"
+    oninput="previewOpname('${r.product_id}','${r.region_id}',this.value)"
   >
 </td>
   <td class="right">${konsumsi}</td>
