@@ -1318,31 +1318,22 @@ tr.innerHTML = `
   });
 }
 
-async function updateStok(productId, regionId, newQty) {
-  const qty = Number(newQty);
-  if (isNaN(qty) || qty < 0) return alert("Stok harus >= 0");
-
-  const { error } = await sb
-    .from("stocks")
-    .update({ qty })
-    .eq("product_id", productId)
-    .eq("region_id", regionId);
-
-  if (error) return alert("Gagal update stok: " + error.message);
-
-  refreshStok();
-}
-
 /* ================= PREVIEW OPNAME ================= */
 function previewOpname(productId, regionId, fisikVal) {
   const fisik = Number(fisikVal);
   if (isNaN(fisik)) return;
 
-  const stokInput = document.querySelector(
-    `input[onchange="updateStok('${productId}','${regionId}',this.value)"]`
-  );
+  // Ambil baris terkait
+  const row = document
+    .getElementById(`selisih-${productId}-${regionId}`)
+    ?.closest("tr");
 
+  if (!row) return;
+
+  // Ambil input stok sistem (kolom ke-2)
+  const stokInput = row.querySelector("td:nth-child(2) input");
   const sistem = Number(stokInput?.value || 0);
+
   const selisih = fisik - sistem;
 
   const el = document.getElementById(`selisih-${productId}-${regionId}`);
