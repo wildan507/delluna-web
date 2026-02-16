@@ -397,6 +397,61 @@
       color:#4ade80;
       border-color:rgba(34,197,94,.4);
     }
+    /* ================= CONFIRM MODAL ================= */
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.confirm-box {
+  background: #000;
+  border: 2px solid #FFD700;
+  box-shadow: 0 0 25px #FFD700, 0 0 60px #FFD70033;
+  padding: 30px 40px;
+  border-radius: 16px;
+  text-align: center;
+  min-width: 350px;
+}
+
+.confirm-title {
+  color: #FFD700;
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 25px;
+  text-shadow: 0 0 10px #FFD700;
+}
+
+.confirm-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.btn-confirm {
+  background: #FFD700;
+  color: #000;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 1px solid #FFD700;
+  color: #FFD700;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
   </style>
 </head>
 <body>
@@ -1381,6 +1436,10 @@ async function saveOpname(productId, regionId) {
   }
 
   const selisih = fisik - sistem;
+
+  /* ================= KONFIRMASI ================= */
+  const yakin = await openConfirm();
+  if (!yakin) return;
 
   /* ================= 1. UPDATE STOK ================= */
   const { error: updateError } = await sb
@@ -2436,6 +2495,19 @@ async function hapusSemuaTransaksi(){
   alert("Semua transaksi sudah dihapus ??");
   refreshDashboard();
 }
+let confirmResolver = null;
+
+function openConfirm() {
+  document.getElementById("confirmModal").style.display = "flex";
+  return new Promise(resolve => {
+    confirmResolver = resolve;
+  });
+}
+
+function closeConfirm(result) {
+  document.getElementById("confirmModal").style.display = "none";
+  if (confirmResolver) confirmResolver(result);
+}
 
 /* ================= INIT ================= */
 (async ()=>{
@@ -2448,6 +2520,18 @@ async function hapusSemuaTransaksi(){
   showTab("dashboard");
 })();
 </script>
+</script>
+
+<!-- ================= CONFIRM MODAL ================= -->
+<div id="confirmModal" class="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title">Apa yakin ingin mengubah stok?</div>
+    <div class="confirm-buttons">
+      <button class="btn-cancel" onclick="closeConfirm(false)">Batal</button>
+      <button class="btn-confirm" onclick="closeConfirm(true)">Ya, Simpan</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
