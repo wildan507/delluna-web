@@ -1275,12 +1275,11 @@ tr.innerHTML = `
   <td>${r.products?.name || "-"}</td>
   <td class="right">
   <input 
-    type="number" 
-    min="0" 
-    value="${stok}" 
-    style="width:70px;text-align:right"
-    onchange="updateStok('${r.product_id}','${r.region_id}',this.value)"
-  >
+  type="number" 
+  value="${stok}" 
+  style="width:70px;text-align:right;background:#111;color:#fff;border:1px solid #333;"
+  readonly
+>
 </td>
 <td class="right">
   <input 
