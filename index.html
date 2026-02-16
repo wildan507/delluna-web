@@ -1298,18 +1298,19 @@ tr.innerHTML = `
   <td class="right ${over>0 ? "danger" : ""}">${overHtml}</td>
 <td id="selisih-${r.product_id}-${r.region_id}" class="right muted">-</td>
 <td class="right">
-  <button onclick="saveOpname('${r.product_id}','${r.region_id}')">
+  <button 
+    onclick="saveOpname('${r.product_id}','${r.region_id}')"
     style="
-    background:#00f5ff;
-    color:#000;
-    border:none;
-    padding:6px 12px;
-    border-radius:6px;
-    font-weight:bold;
-    cursor:pointer;
-    box-shadow:0 0 8px #00f5ff;
-  "
->
+      background:#00f5ff;
+      color:#000;
+      border:none;
+      padding:6px 12px;
+      border-radius:6px;
+      font-weight:bold;
+      cursor:pointer;
+      box-shadow:0 0 8px #00f5ff;
+    "
+  >
     Simpan
   </button>
 </td>
