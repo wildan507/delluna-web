@@ -1505,9 +1505,10 @@ async function tambahProduk() {
     .select()
     .single();
 
-  if (error) {
-  alert("Gagal simpan opname: " + error.message);
+ if (error) {
+  alert("Gagal simpan produk: " + error.message);
   return;
+}
 
   // 2. Ambil semua daerah
   const { data: regions, error: errRegion } = await sb
