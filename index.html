@@ -1354,11 +1354,19 @@ function previewOpname(productId, regionId, fisikVal) {
 /* ================= SAVE OPNAME ================= */
 async function saveOpname(productId, regionId) {
 
-  // 1. Ambil input fisik
-  const fisikInput = document.querySelector(
-    `input[oninput="previewOpname('${productId}','${regionId}',this.value)"]`
-  );
+  // Ambil baris terkait
+  const row = document
+    .getElementById(`selisih-${productId}-${regionId}`)
+    ?.closest("tr");
 
+  if (!row) return alert("Baris tidak ditemukan");
+
+  // Ambil stok sistem (kolom ke-2)
+  const stokInput = row.querySelector("td:nth-child(2) input");
+  const sistem = Number(stokInput?.value || 0);
+
+  // Ambil stok fisik (kolom ke-3)
+  const fisikInput = row.querySelector("td:nth-child(3) input");
   if (!fisikInput) return alert("Input fisik tidak ditemukan");
 
   const fisik = Number(fisikInput.value);
@@ -1366,19 +1374,42 @@ async function saveOpname(productId, regionId) {
     return alert("Stok fisik harus angka >= 0");
   }
 
-  // 2. Update database
-  const { error } = await sb
+  const selisih = fisik - sistem;
+
+  /* ================= 1. UPDATE STOK ================= */
+  const { error: updateError } = await sb
     .from("stocks")
     .update({ qty: fisik })
     .eq("product_id", productId)
     .eq("region_id", regionId);
 
-  if (error) return alert("Gagal simpan opname: " + error.message);
+  if (updateError)
+    return alert("Gagal simpan opname: " + updateError.message);
 
-  // 3. Bersihkan input fisik
+  /* ================= 2. SIMPAN LOG ================= */
+  const { error: logError } = await sb
+    .from("stock_logs")
+    .insert([
+      {
+        product_id: productId,
+        region_id: regionId,
+        qty_before: sistem,
+        qty_after: fisik,
+        selisih: selisih,
+        type: "opname",
+        created_at: new Date()
+      }
+    ]);
+
+  if (logError)
+    return alert("Stok tersimpan, tapi gagal simpan log: " + logError.message);
+
+  /* ================= 3. NOTIFIKASI ================= */
+  alert("Opname berhasil disimpan ✔");
+
+  /* ================= 4. RESET ================= */
   fisikInput.value = "";
 
-  // 4. Refresh tabel
   refreshStok();
 }
 
