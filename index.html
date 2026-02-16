@@ -508,12 +508,13 @@
         <th>Produk</th>
         <th>Stok</th>
         <th>Stok Fisik</th>
+        <th>Selisih</th>
+        <th>Aksi</th>
         <th>Konsumsi</th>
         <th>Stok Ideal</th>
         <th>Max Stok</th>
         <th>Rekom Produksi</th>
         <th>Over Stok</th>
-        <th>Selisih</th>
       </tr>
     </thead>
     <tbody id="stokTable"></tbody>
@@ -1296,6 +1297,11 @@ tr.innerHTML = `
   <td class="right">${rekom}</td>
   <td class="right ${over>0 ? "danger" : ""}">${overHtml}</td>
 <td id="selisih-${r.product_id}-${r.region_id}" class="right muted">-</td>
+<td class="right">
+  <button onclick="saveOpname('${r.product_id}','${r.region_id}')">
+    Simpan
+  </button>
+</td>
 `;
     tbody.appendChild(tr);
   });
