@@ -1354,12 +1354,14 @@ function previewOpname(productId, regionId, fisikVal) {
 /* ================= SAVE OPNAME ================= */
 async function saveOpname(productId, regionId) {
 
-  // Ambil baris terkait
   const row = document
     .getElementById(`selisih-${productId}-${regionId}`)
     ?.closest("tr");
 
-  if (!row) return alert("Baris tidak ditemukan");
+  if (!row) {
+    showToast("Baris tidak ditemukan ❌");
+    return;
+  }
 
   // Ambil stok sistem (kolom ke-2)
   const stokInput = row.querySelector("td:nth-child(2) input");
@@ -1367,11 +1369,15 @@ async function saveOpname(productId, regionId) {
 
   // Ambil stok fisik (kolom ke-3)
   const fisikInput = row.querySelector("td:nth-child(3) input");
-  if (!fisikInput) return alert("Input fisik tidak ditemukan");
+  if (!fisikInput) {
+    showToast("Input fisik tidak ditemukan ❌");
+    return;
+  }
 
   const fisik = Number(fisikInput.value);
   if (isNaN(fisik) || fisik < 0) {
-    return alert("Stok fisik harus angka >= 0");
+    showToast("Stok fisik harus angka >= 0 ❌");
+    return;
   }
 
   const selisih = fisik - sistem;
@@ -1383,8 +1389,10 @@ async function saveOpname(productId, regionId) {
     .eq("product_id", productId)
     .eq("region_id", regionId);
 
-  if (updateError)
-    return alert("Gagal simpan opname: " + updateError.message);
+  if (updateError) {
+    showToast("Gagal simpan opname ❌");
+    return;
+  }
 
   /* ================= 2. SIMPAN LOG ================= */
   const { error: logError } = await sb
@@ -1401,14 +1409,19 @@ async function saveOpname(productId, regionId) {
       }
     ]);
 
-  if (logError)
-    return alert("Stok tersimpan, tapi gagal simpan log: " + logError.message);
+  if (logError) {
+    showToast("Stok tersimpan, tapi gagal simpan log ⚠");
+    return;
+  }
 
-  /* ================= 3. NOTIFIKASI ================= */
-  alert("Opname berhasil disimpan ✔");
+  /* ================= 3. SUCCESS ================= */
+  showToast("Opname berhasil disimpan ✔");
 
   /* ================= 4. RESET ================= */
   fisikInput.value = "";
+
+  const btn = document.getElementById(`btn-${productId}-${regionId}`);
+  if (btn) btn.disabled = true;
 
   refreshStok();
 }
@@ -1469,7 +1482,9 @@ async function tambahProduk() {
     .select()
     .single();
 
-  if (error) return alert("Gagal simpan produk: " + error.message);
+  if (error) {
+  alert("Gagal simpan opname: " + error.message);
+  return;
 
   // 2. Ambil semua daerah
   const { data: regions, error: errRegion } = await sb
