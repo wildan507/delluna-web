@@ -513,6 +513,7 @@
         <th>Max Stok</th>
         <th>Rekom Produksi</th>
         <th>Over Stok</th>
+        <th>Selisih</th>
       </tr>
     </thead>
     <tbody id="stokTable"></tbody>
@@ -1294,10 +1295,12 @@ tr.innerHTML = `
   <td class="right">${maxStok}</td>
   <td class="right">${rekom}</td>
   <td class="right ${over>0 ? "danger" : ""}">${overHtml}</td>
+<td id="selisih-${r.product_id}-${r.region_id}" class="right muted">-</td>
 `;
     tbody.appendChild(tr);
   });
 }
+
 async function updateStok(productId, regionId, newQty) {
   const qty = Number(newQty);
   if (isNaN(qty) || qty < 0) return alert("Stok harus >= 0");
@@ -1312,6 +1315,34 @@ async function updateStok(productId, regionId, newQty) {
 
   refreshStok();
 }
+
+/* ================= PREVIEW OPNAME ================= */
+function previewOpname(productId, regionId, fisikVal) {
+  const fisik = Number(fisikVal);
+  if (isNaN(fisik)) return;
+
+  const stokInput = document.querySelector(
+    `input[onchange="updateStok('${productId}','${regionId}',this.value)"]`
+  );
+
+  const sistem = Number(stokInput?.value || 0);
+  const selisih = fisik - sistem;
+
+  const el = document.getElementById(`selisih-${productId}-${regionId}`);
+  if (!el) return;
+
+  if (selisih > 0) {
+    el.innerHTML = `+${selisih} (lebih)`;
+    el.className = "right success";
+  } else if (selisih < 0) {
+    el.innerHTML = `${selisih} (kurang)`;
+    el.className = "right danger";
+  } else {
+    el.innerHTML = `0 (cocok)`;
+    el.className = "right muted";
+  }
+}
+
 
 /* ================= PRODUK ================= */
 function renderProduk() {
