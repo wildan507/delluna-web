@@ -451,6 +451,35 @@
   border-radius: 8px;
   cursor: pointer;
 }
+/* ===== TABLE STRUCTURE FIX ===== */
+.stok-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* INI KUNCINYA */
+}
+
+.stok-table th,
+.stok-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #1a1a1a;
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.stok-table th {
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #d4af37;
+}
+
+.stok-table td {
+  text-align: center;
+}
+.col-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums; /* Biar digit sejajar */
+}
 
   </style>
 </head>
@@ -557,21 +586,21 @@
 
   <button onclick="refreshStok()">🔄 Refresh</button>
 
-  <table style="margin-top:16px">
+  <table class="stok-table" style="margin-top:16px">
     <thead>
-      <tr>
-        <th>Produk</th>
-        <th>Stok</th>
-        <th>Stok Fisik</th>
-        <th>Konsumsi</th>
-        <th>Stok Ideal</th>
-        <th>Max Stok</th>
-        <th>Rekom Produksi</th>
-        <th>Over Stok</th>
-        <th>Selisih</th>
-        <th>Aksi</th>
-      </tr>
-    </thead>
+  <tr>
+    <th>Produk</th>
+    <th class="col-number">Stok</th>
+    <th>Stok Fisik</th>
+    <th class="col-number">Konsumsi</th>
+    <th class="col-number">Stok Ideal</th>
+    <th class="col-number">Max Stok</th>
+    <th class="col-number">Rekom Produksi</th>
+    <th class="col-number">Over Stok</th>
+    <th class="col-number">Selisih</th>
+    <th>Aksi</th>
+  </tr>
+</thead>
     <tbody id="stokTable"></tbody>
   </table>
 </div>
@@ -1345,12 +1374,13 @@ tr.innerHTML = `
     oninput="previewOpname('${r.product_id}','${r.region_id}',this.value)"
   >
 </td>
-  <td class="right">${konsumsi}</td>
-  <td class="right">${stokIdeal}</td>
-  <td class="right">${maxStok}</td>
-  <td class="right">${rekom}</td>
-  <td class="right ${over>0 ? "danger" : ""}">${overHtml}</td>
-<td id="selisih-${r.product_id}-${r.region_id}" class="right muted">-</td>
+  <td class="col-number">${stok}</td>
+<td class="col-number">${konsumsi}</td>
+<td class="col-number">${stokIdeal}</td>
+<td class="col-number">${maxStok}</td>
+<td class="col-number">${rekom}</td>
+<td class="col-number ${over>0 ? "danger" : ""}">${overHtml}</td>
+<td class="col-number" id="selisih-${r.product_id}-${r.region_id}">-</td>
 <td class="right">
   <button 
     onclick="saveOpname('${r.product_id}','${r.region_id}')"
