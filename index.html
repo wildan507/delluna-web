@@ -2571,6 +2571,10 @@ function renderLaporanDetail(rows){
   tbody.innerHTML = "";
 
   rows.forEach(r=>{
+    const omset = Number(r.qty||0) * Number(r.price||0);
+    const hppTotal = Number(r.qty||0) * Number(r.hpp||0);
+    const margin = omset - hppTotal;
+
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${r.transactions?.date || "-"}</td>
@@ -2578,9 +2582,9 @@ function renderLaporanDetail(rows){
       <td>${r.products?.name || "-"}</td>
       <td>${r.qty}</td>
       <td class="right">${rupiah(r.price)}</td>
-      <td class="right">${rupiah(r.omset)}</td>
-      <td class="right">${rupiah(r.hpp)}</td>
-      <td class="right">${rupiah(r.margin)}</td>
+      <td class="right">${rupiah(omset)}</td>
+      <td class="right">${rupiah(hppTotal)}</td>
+      <td class="right">${rupiah(margin)}</td>
     `;
     tbody.appendChild(tr);
   });
