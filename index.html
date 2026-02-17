@@ -1581,9 +1581,9 @@ async function tambahProduk() {
   const hpp = Number(document.getElementById("hppProduk").value);
   const price = Number(document.getElementById("hargaProduk").value);
 
-  if (!nama || !hpp || !price) return alert("Isi nama, HPP & harga dulu Bos ??");
+  if (!nama || !hpp || !price)
+    return alert("Isi nama, HPP & harga dulu Bos 😏");
 
-  // 1. Insert produk & ambil ID-nya
   const { data: produkBaru, error } = await sb
     .from("products")
     .insert({
@@ -1595,35 +1595,28 @@ async function tambahProduk() {
     .select()
     .single();
 
- if (error) {
-  alert("Gagal simpan produk: " + error.message);
-  return;
-}
+  if (error) {
+    alert("Gagal simpan produk: " + error.message);
+    return;
+  }
 
-  // 2. Ambil semua daerah
-  const { data: regions, error: errRegion } = await sb
-    .from("regions")
-    .select("id");
+  // Generate stok untuk semua region
+  const { error: rpcError } = await sb.rpc("generate_stok_for_product", {
+    p_product_id: produkBaru.id
+  });
 
-  if (errRegion) return alert("Gagal ambil daerah: " + errRegion.message);
+  if (rpcError) {
+    alert("Produk tersimpan tapi gagal generate stok");
+    return;
+  }
 
-  // 3. Buat stok awal = 0 untuk semua daerah
-  const stokRows = regions.map(r => ({
-    product_id: produkBaru.id,
-    region_id: r.id,
-    qty: 0
-  }));
-
-  const { error: errStok } = await sb.from("stocks").insert(stokRows);
-  if (errStok) return alert("Gagal buat stok awal: " + errStok.message);
-
-  // 4. Reset form + reload
   document.getElementById("namaProduk").value = "";
   document.getElementById("hppProduk").value = "";
   document.getElementById("hargaProduk").value = "";
 
   loadProduk();
 }
+
 async function toggleProduk(id) {
   if(!isValidUUID(id)) return;
   const p = produk.find(x => x.id === id);
@@ -1711,14 +1704,23 @@ function renderDaerah(){
 
 async function tambahDaerah(){
   const nama = document.getElementById("namaDaerah").value.trim();
-  if (!nama) return alert("Isi nama daerah dulu Bos ??");
+  if (!nama) return alert("Isi nama daerah dulu Bos 😌");
 
-  const { error } = await sb.from("regions").insert({
-    name: nama,
-    active: true
-  });
+  const { data: daerahBaru, error } = await sb
+    .from("regions")
+    .insert({
+      name: nama,
+      active: true
+    })
+    .select()
+    .single();
 
   if(error) return alert(error.message);
+
+  // 🔥 Generate stok untuk SEMUA produk
+  await sb.rpc("generate_stok_for_region", {
+    p_region_id: daerahBaru.id
+  });
 
   document.getElementById("namaDaerah").value = "";
   loadDaerah();
