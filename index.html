@@ -1334,10 +1334,14 @@ async function refreshStok() {
 
   // 3. Map konsumsi
   const mapKonsumsi = {};
-  (konsumsiRows||[]).forEach(r=>{
-    if(!mapKonsumsi[r.product_id]) mapKonsumsi[r.product_id] = 0;
-    mapKonsumsi[r.product_id] += Number(r.qty||0);
-  });
+
+(konsumsiRows || []).forEach(r => {
+  const key = r.product_id + "_" + r.transactions.region_id;
+
+  if (!mapKonsumsi[key]) mapKonsumsi[key] = 0;
+
+  mapKonsumsi[key] += Number(r.qty || 0);
+});
 
   // 4. Render
   const tbody = document.getElementById("stokTable");
@@ -1345,7 +1349,8 @@ async function refreshStok() {
 
   (stokRows||[]).forEach(r=>{
     const stok = Number(r.qty||0);
-    const konsumsi = Number(mapKonsumsi[r.product_id]||0);
+    const key = r.product_id + "_" + r.region_id;
+    const konsumsi = Number(mapKonsumsi[key] || 0);
     const stokIdeal = Math.ceil(1.5 * konsumsi);
     const maxStok = stokIdeal * 2;
     const rekom = Math.max(stokIdeal - stok, 0);
