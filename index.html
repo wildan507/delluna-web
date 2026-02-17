@@ -2383,8 +2383,8 @@ function updateRow(i,field,value){
   if(p){
     row.price = row.price || p.price;
     row.omset = row.qty * row.price;
-    row.hpp = row.qty * p.hpp;
-    row.margin = row.omset - row.hpp;
+    row.hpp = p.hpp; // simpan per pcs
+    row.margin = row.qty * (row.price - row.hpp);
   }else{
     row.omset = row.hpp = row.margin = 0;
   }
@@ -2399,7 +2399,7 @@ function hitungTotal(){
 
   transaksiDraft.forEach(r=>{
     sumOmset += Number(r.omset||0);
-    sumHPP += Number(r.hpp||0);
+    sumHPP += Number(r.qty||0) * Number(r.hpp||0);
     sumMargin += Number(r.margin||0);
   });
 
