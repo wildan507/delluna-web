@@ -1378,6 +1378,8 @@ const { data, error } = await stokQuery;
 
 (konsumsiRows || []).forEach(r => {
 
+  if (!r.transactions) return; // 🔥 skip jika relasi null
+
   const key = !regionId
     ? r.product_id
     : r.product_id + "_" + r.transactions.region_id;
