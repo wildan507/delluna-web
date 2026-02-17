@@ -956,6 +956,7 @@ function getLast6Months(){
 
 /* ================= TAB NAV ================= */
 function showTab(tab) {
+  localStorage.setItem("activeTab", tab); 
   const tabs = ["dashboard","stok","produk","daerah","zona","mitra","distribusi","input","laporan"];
   tabs.forEach(t => {
     const el = document.getElementById(t+"Tab");
@@ -2547,7 +2548,9 @@ function closeConfirm(result) {
   await loadDistribusi();
   await loadMitra();
   renderStokFilters();
-  showTab("dashboard");
+
+  const savedTab = localStorage.getItem("activeTab") || "dashboard";
+  showTab(savedTab);
 })();
 </script>
 </script>
