@@ -1306,15 +1306,56 @@ async function refreshStok() {
   const sejakISO = sejak.toISOString().slice(0,10);
 
   // 1. Ambil stok
+let stokRows = [];
+
+if (!regionId) {
+  // MODE SEMUA DAERAH → total per produk
+
+  let stokQuery = sb
+  .from("stocks")
+  .select("product_id, qty, products(name)");
+
+if (productId)
+  stokQuery = stokQuery.eq("product_id", productId);
+
+const { data, error } = await stokQuery;
+
+  if (error) return alert("Gagal load stok: " + error.message);
+
+  const mapStok = {};
+
+  (data || []).forEach(r => {
+    if (!mapStok[r.product_id]) {
+      mapStok[r.product_id] = {
+        product_id: r.product_id,
+        region_id: null,
+        products: { name: r.products?.name },
+        qty: 0
+      };
+    }
+
+    mapStok[r.product_id].qty += Number(r.qty || 0);
+  });
+
+  stokRows = Object.values(mapStok);
+
+} else {
+
+  // MODE PER DAERAH
+
   let stokQuery = sb
     .from("stocks")
-    .select("qty, product_id, region_id, products(name)");
+    .select("qty, product_id, region_id, products(name)")
+    .eq("region_id", regionId);
 
-  if(regionId) stokQuery = stokQuery.eq("region_id", regionId);
-  if(productId) stokQuery = stokQuery.eq("product_id", productId);
+  if (productId)
+    stokQuery = stokQuery.eq("product_id", productId);
 
-  const { data:stokRows, error:errStok } = await stokQuery;
-  if(errStok) return alert("Gagal load stok: " + errStok.message);
+  const { data, error } = await stokQuery;
+  if (error) return alert("Gagal load stok: " + error.message);
+
+  stokRows = data;
+}
 
   // 2. Ambil konsumsi
   let konsumsiQuery = sb
@@ -1336,9 +1377,13 @@ async function refreshStok() {
   const mapKonsumsi = {};
 
 (konsumsiRows || []).forEach(r => {
-  const key = r.product_id + "_" + r.transactions.region_id;
 
-  if (!mapKonsumsi[key]) mapKonsumsi[key] = 0;
+  const key = !regionId
+    ? r.product_id
+    : r.product_id + "_" + r.transactions.region_id;
+
+  if (!mapKonsumsi[key])
+    mapKonsumsi[key] = 0;
 
   mapKonsumsi[key] += Number(r.qty || 0);
 });
@@ -1349,13 +1394,15 @@ async function refreshStok() {
 
   (stokRows||[]).forEach(r=>{
     const stok = Number(r.qty||0);
-    const key = r.product_id + "_" + r.region_id;
+    const key = !regionId
+    ? r.product_id
+    : r.product_id + "_" + r.region_id;
     const konsumsi = Number(mapKonsumsi[key] || 0);
     const stokIdeal = Math.ceil(1.5 * konsumsi);
     const maxStok = stokIdeal * 2;
     const rekom = Math.max(stokIdeal - stok, 0);
     const over = Math.max(stok - maxStok, 0);
-
+    const isAllMode = !regionId;
     const tr = document.createElement("tr");
 
 const overHtml = over > 0
@@ -1378,7 +1425,8 @@ tr.innerHTML = `
     min="0"
     placeholder="fisik"
     style="width:70px;text-align:right"
-    oninput="previewOpname('${r.product_id}','${r.region_id}',this.value)"
+    ${isAllMode ? "disabled" : ""}
+    oninput="${isAllMode ? "" : `previewOpname('${r.product_id}','${r.region_id}',this.value)`}"
   >
 </td>
 <td class="col-number">${konsumsi}</td>
@@ -1386,10 +1434,10 @@ tr.innerHTML = `
 <td class="col-number">${maxStok}</td>
 <td class="col-number">${rekom}</td>
 <td class="col-number ${over>0 ? "danger" : ""}">${overHtml}</td>
-<td class="col-number" id="selisih-${r.product_id}-${r.region_id}">-</td>
+<td class="col-number" id="selisih-${r.product_id}-${r.region_id || 'all'}">-</td>
 <td class="right">
   <button 
-    onclick="saveOpname('${r.product_id}','${r.region_id}')"
+  onclick="handleSaveOpname('${r.product_id}','${r.region_id}')"
     style="
       background:#00f5ff;
       color:#000;
@@ -1407,6 +1455,18 @@ tr.innerHTML = `
 `;
     tbody.appendChild(tr);
   });
+}
+
+function handleSaveOpname(productId, regionId) {
+
+  const regionFilter = document.getElementById("stokFilterDaerah").value || null;
+
+  if (!regionFilter) {
+    alert("Tidak bisa opname di mode Semua Daerah");
+    return;
+  }
+
+  saveOpname(productId, regionId);
 }
 
 /* ================= PREVIEW OPNAME ================= */
