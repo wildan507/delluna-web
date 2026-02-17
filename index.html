@@ -411,8 +411,8 @@
 
 .confirm-box {
   background: #000;
-  border: 2px solid #FFD700;
-  box-shadow: 0 0 25px #FFD700, 0 0 60px #FFD70033;
+  border: 2px solid #FFD700; /* stroke gold */
+  box-shadow: 0 0 25px #FFD700, 0 0 60px #FFD70033; /* glow tetap gold */
   padding: 30px 40px;
   border-radius: 16px;
   text-align: center;
@@ -420,11 +420,11 @@
 }
 
 .confirm-title {
-  color: #FFD700;
+  color: #ffffff;
   font-size: 18px;
   font-weight: bold;
   margin-bottom: 25px;
-  text-shadow: 0 0 10px #FFD700;
+  text-shadow: 0 0 5px #ffffff;
 }
 
 .confirm-buttons {
@@ -434,7 +434,7 @@
 }
 
 .btn-confirm {
-  background: #FFD700;
+  background: #00ff66; /* hijau terang */
   color: #000;
   border: none;
   padding: 10px 20px;
@@ -444,13 +444,14 @@
 }
 
 .btn-cancel {
-  background: transparent;
-  border: 1px solid #FFD700;
-  color: #FFD700;
+  background: #ff1e1e; /* merah terang */
+  border: none;
+  color: #fff;
   padding: 10px 20px;
   border-radius: 8px;
   cursor: pointer;
 }
+
 /* ===== TABLE STRUCTURE FIX ===== */
 .stok-table {
   width: 100%;
@@ -1521,12 +1522,12 @@ function showToast(message) {
   toast.style.position = "fixed";
   toast.style.bottom = "20px";
   toast.style.right = "20px";
-  toast.style.background = "#00f5ff";
+  toast.style.background = "#00ff88"; // hijau neon
   toast.style.color = "#000";
   toast.style.padding = "12px 18px";
   toast.style.borderRadius = "8px";
   toast.style.fontWeight = "bold";
-  toast.style.boxShadow = "0 0 12px #00f5ff";
+  toast.style.boxShadow = "0 0 15px #00ff88, 0 0 30px #00ff8844"; // glow hijau
   toast.style.zIndex = "9999";
 
   document.body.appendChild(toast);
