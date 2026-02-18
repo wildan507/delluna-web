@@ -1034,7 +1034,14 @@ async function loadMitra(){
   while(true){
     let query = sb
       .from("partners")
-      .select("*, regions(name), zones(name)")
+      .select(`
+        *,
+        regions(name),
+        zones(
+          id,
+          master_zones(name)
+        )
+      `)
       .order("created_at", { ascending:false })
       .range(from, from + limit - 1);
 
@@ -2053,7 +2060,7 @@ function renderMitra(){
 
   mitra.forEach(m => {
     const namaDaerah = m.regions?.name || "-";
-    const namaZona = m.zones?.name || "-";
+    const namaZona = m.zones?.master_zones?.name || "-";
     const mapsLink = m.maps_url ? `<a href="${m.maps_url}" target="_blank" class="link">Maps</a>` : "-";
 
     const statusBtn = `
@@ -2122,7 +2129,9 @@ function loadZonaEdit(mitraId, selectedZoneId=null){
 
   sel.innerHTML = `<option value="">-- pilih zona --</option>` +
     list.map(z => `
-      <option value="${z.id}" ${String(z.id)===String(selectedZoneId)?"selected":""}>${z.name}</option>
+      <option value="${z.id}" ${String(z.id)===String(selectedZoneId)?"selected":""}>
+        ${z.master_zones?.name || "-"}
+      </option>
     `).join("");
 }
 
