@@ -1773,6 +1773,7 @@ async function tambahDaerah(){
   const nama = document.getElementById("namaDaerah").value.trim();
   if (!nama) return alert("Isi nama daerah dulu");
 
+  // 1️⃣ Insert region baru
   const { data: daerahBaru, error } = await sb
     .from("regions")
     .insert({ name: nama, active: true })
@@ -1781,25 +1782,32 @@ async function tambahDaerah(){
 
   if(error) return alert(error.message);
 
-  // 🔥 Generate stok
+  // 2️⃣ Generate stok untuk region baru
   await sb.rpc("generate_stok_for_region", {
     p_region_id: daerahBaru.id
   });
 
-  // 🔥 Ambil semua zona dari region pertama sebagai template
-  const { data: zonaTemplate } = await sb
-    .from("zones")
-    .select("name")
-    .limit(4); // atau tanpa limit kalau mau semua
+  // 3️⃣ Ambil semua master zona
+  const { data: masterZones, error: errZona } = await sb
+    .from("master_zones")
+    .select("name");
 
-  if(zonaTemplate?.length){
-    const newZones = zonaTemplate.map(z => ({
+  if(errZona) return alert("Gagal ambil master zona: " + errZona.message);
+
+  // 4️⃣ Insert semua zona ke region baru
+  if(masterZones?.length){
+    const newZones = masterZones.map(z => ({
       name: z.name,
       region_id: daerahBaru.id,
       active: true
     }));
 
-    await sb.from("zones").insert(newZones);
+    const { error: insertError } = await sb
+      .from("zones")
+      .insert(newZones);
+
+    if(insertError)
+      return alert("Gagal generate zona: " + insertError.message);
   }
 
   document.getElementById("namaDaerah").value = "";
