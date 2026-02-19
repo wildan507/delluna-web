@@ -1950,16 +1950,16 @@ async function tambahZona(){
   loadMasterZona();
 }
 
-async function loadMasterZona(){
+async function loadMasterZones(){
   const { data, error } = await sb
     .from("master_zones")
     .select("*")
-    .order("created_at");
+    .order("name"); // ⬅ urut berdasarkan nama saja
 
   if(error) return alert("Gagal load master zona: " + error.message);
 
   masterZones = data || [];
-  renderZona();
+  renderMasterZona();
 }
 
 function editMasterZona(id){
