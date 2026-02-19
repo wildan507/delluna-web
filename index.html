@@ -662,7 +662,6 @@
       <h2>Master Zona</h2>
 
       <div class="row">
-        <select id="zonaDaerah"></select>
         <input id="namaZona" placeholder="Nama zona (misal: Zona 1)">
         <button class="btn-primary" onclick="tambahZona()">Simpan</button>
       </div>
@@ -671,7 +670,6 @@
         <thead>
           <tr>
             <th>Zona</th>
-            <th>Daerah</th>
             <th>Status</th>
             <th class="center">Aksi</th>
           </tr>
@@ -1891,12 +1889,6 @@ function renderSelectZona(){
   sel.innerHTML = `<option value="">-- pilih zona --</option>`;
 }
 
-function renderSelectZonaDaerah(){
-  const sel = document.getElementById("zonaDaerah");
-  sel.innerHTML = `<option value="">-- pilih daerah --</option>` +
-    daerah.filter(d=>d.active).map(d => `<option value="${d.id}">${d.name}</option>`).join("");
-}
-
 function loadZonaByDaerah(){
   const regionId = document.getElementById("mitraDaerah").value;
   const sel = document.getElementById("mitraZona");
@@ -1923,31 +1915,20 @@ function renderZona(){
   const tbody = document.getElementById("zonaTable");
   tbody.innerHTML = "";
 
-  zones.forEach(z => {
+  masterZones.forEach(z => {
     const tr = document.createElement("tr");
 
-    if(z.edit){
-      tr.innerHTML = `
-        <td><input value="${z.master_zones?.name || ''}" id="edit-zona-${z.master_zone_id}"></td>
-        <td>${z.regions?.name || "-"}</td>
-        <td>${z.active ? `<span class="pill pill-active">Aktif</span>` : `<span class="pill pill-off">Nonaktif</span>`}</td>
-        <td class="center">
-          <button onclick="simpanEditZona('${z.master_zone_id}')">Simpan</button>
-          <button onclick="batalEditZona()">Batal</button>
-        </td>
-      `;
-    } else {
-      tr.innerHTML = `
-        <td>${z.master_zones?.name || "-"}</td>
-        <td>${z.regions?.name || "-"}</td>
-        <td>${z.active ? `<span class="pill pill-active">Aktif</span>` : `<span class="pill pill-off">Nonaktif</span>`}</td>
-        <td class="center">
-          <button onclick="editZona('${z.master_zone_id}')">Edit</button>
-          <button onclick="toggleZona('${z.id}')">${z.active ? "Nonaktifkan" : "Aktifkan"}</button>
-          <button class="btn-danger" onclick="hapusZona('${z.master_zone_id}')">Hapus</button>
-        </td>
-      `;
-    }
+    tr.innerHTML = `
+      <td>${z.name}</td>
+      <td>${z.active ? `<span class="pill pill-active">Aktif</span>` : `<span class="pill pill-off">Nonaktif</span>`}</td>
+      <td class="center">
+        <button onclick="editMasterZona('${z.id}')">Edit</button>
+        <button onclick="toggleMasterZona('${z.id}', ${z.active})">
+          ${z.active ? "Nonaktifkan" : "Aktifkan"}
+        </button>
+        <button class="btn-danger" onclick="hapusMasterZona('${z.id}')">Hapus</button>
+      </td>
+    `;
 
     tbody.appendChild(tr);
   });
@@ -1957,92 +1938,59 @@ async function tambahZona(){
   const name = document.getElementById("namaZona").value.trim();
   if(!name) return alert("Isi nama zona dulu");
 
-  // 1️⃣ Insert ke master
-  const { data: master, error } = await sb
+  const { error } = await sb
     .from("master_zones")
-    .insert({ name })
-    .select()
-    .single();
+    .insert({
+      name,
+      active: true
+    });
 
   if(error) return alert(error.message);
-
-  // 2️⃣ Ambil semua daerah
-  const { data: regions } = await sb
-    .from("regions")
-    .select("id");
-
-  if(regions?.length){
-    const zonesToInsert = regions.map(r => ({
-      region_id: r.id,
-      master_zone_id: master.id,
-      active: true
-    }));
-
-    await sb.from("zones").insert(zonesToInsert);
-  }
 
   document.getElementById("namaZona").value = "";
-  loadZones();
+  loadMasterZona();
 }
 
+async function loadMasterZona(){
+  const { data, error } = await sb
+    .from("master_zones")
+    .select("*")
+    .order("created_at");
 
-function editZona(masterId){
-  zones.forEach(z => z.edit = false);
-  zones
-    .filter(z => z.master_zone_id === masterId)
-    .forEach(z => z.edit = true);
+  if(error) return alert("Gagal load master zona: " + error.message);
 
+  masterZones = data || [];
   renderZona();
 }
 
+function editMasterZona(id){
+  masterZones.forEach(z => z.edit = false);
+  const z = masterZones.find(x => x.id === id);
+  z.edit = true;
+  renderZona();
+}
 
-async function simpanEditZona(masterId){
-  const name = document.getElementById(`edit-zona-${masterId}`).value.trim();
-  if(!name) return alert("Nama tidak boleh kosong");
-
+async function toggleMasterZona(id,current){
   const { error } = await sb
     .from("master_zones")
-    .update({ name })
-    .eq("id", masterId);
-
-  if(error) return alert(error.message);
-
-  loadZones();
-}
-
-function batalEditZona(){
-  zones.forEach(z => z.edit = false);
-  renderZona();
-}
-
-
-async function toggleZona(id){
-  if(!isValidUUID(id)) return;
-  const z = zones.find(x => x.id === id);
-  const { error } = await sb
-    .from("zones")
-    .update({ active: !z.active })
+    .update({ active: !current })
     .eq("id", id);
 
   if(error) return alert(error.message);
-  loadZones();
+  loadMasterZona();
 }
 
-async function hapusZona(masterId){
-  if (!confirm("Yakin mau hapus zona ini di SEMUA daerah?")) return;
+async function hapusMasterZona(id){
+  if (!confirm("Yakin mau hapus master zona ini?")) return;
 
-  // 1️⃣ hapus semua turunan
-  await sb.from("zones").delete().eq("master_zone_id", masterId);
-
-  // 2️⃣ hapus master
   const { error } = await sb
     .from("master_zones")
     .delete()
-    .eq("id", masterId);
+    .eq("id", id);
 
   if(error) return alert(error.message);
 
-  loadZones();
+  loadMasterZona();
 }
 
 /* ================= MITRA ================= */
@@ -2702,7 +2650,7 @@ function closeConfirm(result) {
 (async ()=>{
   await loadProduk();
   await loadDaerah();
-  await loadZones();
+  await loadMasterZona();
   await loadDistribusi();
   await loadMitra();
   renderStokFilters();
