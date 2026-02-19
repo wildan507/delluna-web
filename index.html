@@ -1917,20 +1917,60 @@ function renderMasterZones(){
   masterZones.forEach(z => {
     const tr = document.createElement("tr");
 
-    tr.innerHTML = `
-      <td>${z.name}</td>
-      <td>${z.active ? `<span class="pill pill-active">Aktif</span>` : `<span class="pill pill-off">Nonaktif</span>`}</td>
-      <td class="center">
-        <button onclick="editMasterZona('${z.id}')">Edit</button>
-        <button onclick="toggleMasterZona('${z.id}', ${z.active})">
-          ${z.active ? "Nonaktifkan" : "Aktifkan"}
-        </button>
-        <button class="btn-danger" onclick="hapusMasterZona('${z.id}')">Hapus</button>
-      </td>
-    `;
+    if(z.edit){
+      tr.innerHTML = `
+        <td>
+          <input value="${z.name}" id="edit-master-${z.id}">
+        </td>
+        <td>
+          ${z.active 
+            ? `<span class="pill pill-active">Aktif</span>` 
+            : `<span class="pill pill-off">Nonaktif</span>`}
+        </td>
+        <td class="center">
+          <button onclick="simpanEditMasterZona('${z.id}')">Simpan</button>
+          <button onclick="batalEditMasterZona()">Batal</button>
+        </td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td>${z.name}</td>
+        <td>
+          ${z.active 
+            ? `<span class="pill pill-active">Aktif</span>` 
+            : `<span class="pill pill-off">Nonaktif</span>`}
+        </td>
+        <td class="center">
+          <button onclick="editMasterZona('${z.id}')">Edit</button>
+          <button onclick="toggleMasterZona('${z.id}', ${z.active})">
+            ${z.active ? "Nonaktifkan" : "Aktifkan"}
+          </button>
+          <button class="btn-danger" onclick="hapusMasterZona('${z.id}')">Hapus</button>
+        </td>
+      `;
+    }
 
     tbody.appendChild(tr);
   });
+}
+
+async function simpanEditMasterZona(id){
+  const name = document.getElementById(`edit-master-${id}`).value.trim();
+  if(!name) return alert("Nama tidak boleh kosong");
+
+  const { error } = await sb
+    .from("master_zones")
+    .update({ name })
+    .eq("id", id);
+
+  if(error) return alert(error.message);
+
+  loadMasterZones();
+}
+
+function batalEditMasterZona(){
+  masterZones.forEach(z => z.edit = false);
+  renderZona();
 }
 
 async function tambahZona(){
