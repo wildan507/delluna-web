@@ -1966,7 +1966,7 @@ function editMasterZona(id){
   masterZones.forEach(z => z.edit = false);
   const z = masterZones.find(x => x.id === id);
   z.edit = true;
-  renderZona();
+  renderMasterZones();
 }
 
 async function toggleMasterZona(id,current){
