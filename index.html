@@ -497,12 +497,21 @@
     <div class="dropdown-menu">
       <button id="tab-produk" onclick="showTab('produk')">Produk</button>
       <button id="tab-daerah" onclick="showTab('daerah')">Daerah</button>
-      <button id="tab-zona" onclick="showTab('zona')">Zona</button>
+      <div class="dropdown">
+       <button id="tab-zona">Zona</button>
+        <div class="dropdown-menu">
+         <button onclick="showTab('zonaTab'); loadMasterZones();">
+          Master Zona
+         </button>
+         <button onclick="showTab('zonaDaerahTab'); loadZonaPerDaerah();">
+          Zona Per Daerah
+       </button>
+     </div>
+    </div>
       <button id="tab-mitra" onclick="showTab('mitra')">Mitra</button>
       <button id="tab-distribusi" onclick="showTab('distribusi')">Distribusi</button>
     </div>
   </div>
-
   <button id="tab-input" onclick="showTab('input')">Input</button>
   <button id="tab-laporan" onclick="showTab('laporan')">Laporan</button>
 </nav>
@@ -2030,6 +2039,44 @@ async function hapusMasterZona(id){
   if(error) return alert(error.message);
 
   loadMasterZones();
+}
+
+async function loadZonaPerDaerah(){
+  const { data, error } = await sb
+    .from("zones")
+    .select(`
+      id,
+      active,
+      regions(name),
+      master_zones(name)
+    `)
+    .order("region_id");
+
+  if(error) return alert("Gagal load zona per daerah: " + error.message);
+
+  zones = data || [];
+  renderZonaPerDaerah();
+}
+
+function renderZonaPerDaerah(){
+  const tbody = document.getElementById("zonaPerDaerahTable");
+  tbody.innerHTML = "";
+
+  zones.forEach(z => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${z.regions?.name || "-"}</td>
+      <td>${z.master_zones?.name || "-"}</td>
+      <td>
+        ${z.active 
+          ? `<span class="pill pill-active">Aktif</span>` 
+          : `<span class="pill pill-off">Nonaktif</span>`}
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
 }
 
 /* ================= MITRA ================= */
