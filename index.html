@@ -1910,7 +1910,7 @@ function loadZonaByDaerah(){
     ).join("");
 }
 
-function renderZona(){
+function renderMasterZones(){
   const tbody = document.getElementById("zonaTable");
   tbody.innerHTML = "";
 
@@ -1947,7 +1947,7 @@ async function tambahZona(){
   if(error) return alert(error.message);
 
   document.getElementById("namaZona").value = "";
-  loadMasterZona();
+  loadMasterZones();
 }
 
 async function loadMasterZones(){
@@ -1976,7 +1976,7 @@ async function toggleMasterZona(id,current){
     .eq("id", id);
 
   if(error) return alert(error.message);
-  loadMasterZona();
+  loadMasterZones();
 }
 
 async function hapusMasterZona(id){
@@ -1989,7 +1989,7 @@ async function hapusMasterZona(id){
 
   if(error) return alert(error.message);
 
-  loadMasterZona();
+  loadMasterZones();
 }
 
 /* ================= MITRA ================= */
@@ -2657,7 +2657,6 @@ function closeConfirm(result) {
   const savedTab = localStorage.getItem("activeTab") || "dashboard";
   showTab(savedTab);
 })();
-</script>
 </script>
 
 <!-- ================= CONFIRM MODAL ================= -->
