@@ -481,6 +481,25 @@
   text-align: right;
   font-variant-numeric: tabular-nums; /* Biar digit sejajar */
 }
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  left: 100%;
+  top: 0;
+  background: #111;
+  padding: 8px;
+  border-radius: 10px;
+  z-index: 999;
+}
+
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
 
   </style>
 </head>
@@ -490,28 +509,34 @@
 
 <nav>
   <button id="tab-dashboard" onclick="showTab('dashboard')">Dashboard</button>
-  <button id="tab-stok" onclick="showTab('stok')">Stok</button>  <!-- ✅ TAMBAHAN -->
+  <button id="tab-stok" onclick="showTab('stok')">Stok</button>
 
   <div class="dropdown">
     <button id="tab-control">Control Panel</button>
     <div class="dropdown-menu">
+
       <button id="tab-produk" onclick="showTab('produk')">Produk</button>
       <button id="tab-daerah" onclick="showTab('daerah')">Daerah</button>
+
+      <!-- SUB MENU ZONA -->
       <div class="dropdown">
-       <button id="tab-zona">Zona</button>
+        <button>ZONA ▸</button>
         <div class="dropdown-menu">
-         <button onclick="showTab('zonaTab'); loadMasterZones();">
-          Master Zona
-         </button>
-         <button onclick="showTab('zonaDaerahTab'); loadZonaPerDaerah();">
-          Zona Per Daerah
-       </button>
-     </div>
-    </div>
+          <button onclick="showTab('zona'); loadMasterZones();">
+            Master Zona
+          </button>
+          <button onclick="showTab('zonaDaerah'); loadZonaPerDaerah();">
+            Zona Per Daerah
+          </button>
+        </div>
+      </div>
+
       <button id="tab-mitra" onclick="showTab('mitra')">Mitra</button>
       <button id="tab-distribusi" onclick="showTab('distribusi')">Distribusi</button>
+
     </div>
   </div>
+
   <button id="tab-input" onclick="showTab('input')">Input</button>
   <button id="tab-laporan" onclick="showTab('laporan')">Laporan</button>
 </nav>
@@ -963,22 +988,39 @@ function getLast6Months(){
 
 /* ================= TAB NAV ================= */
 function showTab(tab) {
-  localStorage.setItem("activeTab", tab); 
-  const tabs = ["dashboard","stok","produk","daerah","zona","mitra","distribusi","input","laporan"];
-  tabs.forEach(t => {
-    const el = document.getElementById(t+"Tab");
-    if(el) el.classList.add("hidden");
-    const btn = document.getElementById("tab-"+t);
-    if(btn) btn.classList.remove("active");
-  });
-  document.getElementById(tab+"Tab").classList.remove("hidden");
-  const activeBtn = document.getElementById("tab-"+tab);
-  if(activeBtn) activeBtn.classList.add("active");
+  localStorage.setItem("activeTab", tab);
 
-  if (tab === "laporan") refreshLaporan();
-  if (tab === "dashboard") refreshDashboard();
-  if (tab === "input") renderInput();
-  if (tab === "stok") refreshStok(); // ✅ TAMBAHAN
+  const tabs = [
+    "dashboard",
+    "stok",
+    "produk",
+    "daerah",
+    "zona",
+    "zonaDaerah",
+    "mitra",
+    "distribusi",
+    "input",
+    "laporan"
+  ];
+
+  tabs.forEach(t => {
+    const el = document.getElementById(t + "Tab");
+    if (el) el.classList.add("hidden");
+
+    const btn = document.getElementById("tab-" + t);
+    if (btn) btn.classList.remove("active");
+  });
+
+  const activeTab = document.getElementById(tab + "Tab");
+  if (activeTab) activeTab.classList.remove("hidden");
+
+  const activeBtn = document.getElementById("tab-" + tab);
+  if (activeBtn) activeBtn.classList.add("active");
+
+  if (tab === "laporan" && typeof refreshLaporan === "function") refreshLaporan();
+  if (tab === "dashboard" && typeof refreshDashboard === "function") refreshDashboard();
+  if (tab === "input" && typeof renderInput === "function") renderInput();
+  if (tab === "stok" && typeof refreshStok === "function") refreshStok();
 }
 
 
