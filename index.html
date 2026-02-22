@@ -2061,11 +2061,10 @@ async function tambahZona(){
 
   if(error) return alert(error.message);
 
-  // 2️⃣ Ambil semua region aktif
+  // 2️⃣ Ambil semua region (aktif & nonaktif)
   const { data:regions, error:err2 } = await sb
     .from("regions")
     .select("id")
-    .eq("active", true);
 
   if(err2) return alert(err2.message);
 
