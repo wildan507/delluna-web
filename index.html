@@ -1035,12 +1035,15 @@ function showTab(tab) {
   const activeBtn = document.getElementById("tab-" + tab);
   if (activeBtn) activeBtn.classList.add("active");
 
+  /* ===== AUTO LOAD DATA ===== */
   if (tab === "laporan" && typeof refreshLaporan === "function") refreshLaporan();
   if (tab === "dashboard" && typeof refreshDashboard === "function") refreshDashboard();
   if (tab === "input" && typeof renderInput === "function") renderInput();
   if (tab === "stok" && typeof refreshStok === "function") refreshStok();
-}
 
+  if (tab === "zona" && typeof loadMasterZones === "function") loadMasterZones();
+  if (tab === "zonaDaerah" && typeof loadZonaPerDaerah === "function") loadZonaPerDaerah();
+}
 
 /* ================= LOAD MASTER DATA ================= */
 async function loadProduk(){
