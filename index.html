@@ -2114,6 +2114,8 @@ async function loadZonaPerDaerah(){
 
   if(error) return alert("Gagal load zona per daerah: " + error.message);
 
+  console.log("DATA ZONA:", data);
+  
   zones = data || [];
   renderZonaPerDaerah();
 }
