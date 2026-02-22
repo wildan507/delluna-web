@@ -690,28 +690,46 @@
     </div>
   </div>
 
-  <!-- ================= ZONA ================= -->
-  <div id="zonaTab" class="hidden">
-    <div class="card">
-      <h2>Master Zona</h2>
+  <!-- ================= MASTER ZONA ================= -->
+<div id="zonaTab" class="hidden">
+  <div class="card">
+    <h2>Master Zona</h2>
 
-      <div class="row">
-        <input id="namaZona" placeholder="Nama zona (misal: Zona 1)">
-        <button class="btn-primary" onclick="tambahZona()">Simpan</button>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Zona</th>
-            <th>Status</th>
-            <th class="center">Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="zonaPerDaerahTable"></tbody>
-      </table>
+    <div class="row">
+      <input id="namaZona" placeholder="Nama zona (misal: Zona 1)">
+      <button class="btn-primary" onclick="tambahZona()">Simpan</button>
     </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Zona</th>
+          <th>Status</th>
+          <th class="center">Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="zonaTable"></tbody>
+    </table>
   </div>
+</div>
+
+<!-- ================= ZONA PER DAERAH ================= -->
+<div id="zonaDaerahTab" class="hidden">
+  <div class="card">
+    <h2>Zona Per Daerah (Read Only)</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Daerah</th>
+          <th>Zona</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="zonaPerDaerahTable"></tbody>
+    </table>
+  </div>
+</div>
 
   <!-- ================= MITRA ================= -->
   <div id="mitraTab" class="hidden">
@@ -1962,7 +1980,7 @@ function loadZonaByDaerah(){
 }
 
 function renderMasterZones(){
-  const tbody = document.getElementById("zonaPerDaerahTable");
+  const tbody = document.getElementById("zonaTable");
   tbody.innerHTML = "";
 
   masterZones.forEach(z => {
