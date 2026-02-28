@@ -1104,7 +1104,7 @@ async function loadZones(){
   if(error) return alert("Gagal load zona: " + error.message);
 
   zones = data || [];
-  renderZona();
+  renderZonaPerDaerah();
   renderSelectZona();
   loadZonaByDaerah();
 }
