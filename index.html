@@ -1112,16 +1112,35 @@ async function loadZones(){
 /* ========= LOAD MITRA (PAGINATION + FILTER STATUS) ========= */
 async function loadMitra(){
 
+  // ==============================
+  // 1️⃣ Ambil nilai filter dari dropdown
+  // ==============================
+  // Filter status kunjungan (sudah / belum)
   const statusFilter = document.getElementById("filterVisit")?.value || "";
+  
+  // Filter berdasarkan daerah (region_id di table partners)
   const regionFilter = document.getElementById("filterDaerah")?.value || "";
+  
+  // Filter berdasarkan zona (zone_id di table partners)
   const zonaFilter   = document.getElementById("filterZona")?.value || "";
 
+  // ==============================
+  // 2️⃣ Setup pagination
+  // ==============================
+  // Karena Supabase limit 1000 per range,
+  // kita pakai loop untuk ambil semua data kalau lebih dari 1000
   let allData = [];
   let from = 0;
   const limit = 1000;
 
   while(true){
 
+    // ==============================
+    // 3️⃣ Base Query ke table partners
+    // ==============================
+    // - Ambil semua kolom (*)
+    // - Join ke regions untuk ambil nama daerah
+    // - Join ke zones dan master_zones untuk ambil nama zona
     let query = sb
       .from("partners")
       .select(`
@@ -1133,32 +1152,50 @@ async function loadMitra(){
           master_zones(name)
         )
       `)
-      .order("created_at", { ascending:false })
-      .range(from, from + limit - 1);
+      .order("created_at", { ascending:false }) // Urut dari terbaru
+      .range(from, from + limit - 1); // Pagination
 
+    // ==============================
+    // 4️⃣ Apply filter jika ada
+    // ==============================
+
+    // Filter berdasarkan status kunjungan
     if(statusFilter){
       query = query.eq("visit_status", statusFilter);
     }
 
+    // Filter berdasarkan daerah (region_id)
     if(regionFilter){
       query = query.eq("region_id", regionFilter);
     }
 
+    // Filter berdasarkan zona (zone_id)
     if(zonaFilter){
       query = query.eq("zone_id", zonaFilter);
     }
 
+    // ==============================
+    // 5️⃣ Eksekusi query
+    // ==============================
     const { data, error } = await query;
     if(error) return alert("Gagal load mitra: " + error.message);
 
+    // Kalau tidak ada data lagi, hentikan loop
     if(!data || data.length === 0) break;
 
+    // Gabungkan hasil ke array utama
     allData = allData.concat(data);
+
+    // Kalau data kurang dari limit berarti sudah halaman terakhir
     if(data.length < limit) break;
 
+    // Geser offset untuk ambil halaman berikutnya
     from += limit;
   }
 
+  // ==============================
+  // 6️⃣ Simpan ke variabel global & render tabel
+  // ==============================
   mitra = allData;
   renderMitra();
 }
