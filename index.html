@@ -2248,7 +2248,8 @@ function renderSelectMitraDaerah(){
 }
 
 function renderFilterDaerahMitra(){
-  const sel = document.getElementById("filterDaerahMitra");
+  const sel = document.getElementById("filterDaerah");
+  if(!sel) return; // proteksi kalau element belum ada
 
   sel.innerHTML =
     `<option value="">Semua Daerah</option>` +
