@@ -1113,8 +1113,8 @@ async function loadZones(){
 async function loadMitra(){
 
   const statusFilter = document.getElementById("filterVisit")?.value || "";
-  const regionFilter = document.getElementById("filterDaerahMitra")?.value || "";
-  const zonaFilter   = document.getElementById("filterZonaMitra")?.value || "";
+  const regionFilter = document.getElementById("filterDaerah")?.value || "";
+  const zonaFilter   = document.getElementById("filterZona")?.value || "";
 
   let allData = [];
   let from = 0;
@@ -1136,17 +1136,14 @@ async function loadMitra(){
       .order("created_at", { ascending:false })
       .range(from, from + limit - 1);
 
-    // FILTER STATUS
     if(statusFilter){
       query = query.eq("visit_status", statusFilter);
     }
 
-    // FILTER DAERAH
     if(regionFilter){
       query = query.eq("region_id", regionFilter);
     }
 
-    // FILTER ZONA
     if(zonaFilter){
       query = query.eq("zone_id", zonaFilter);
     }
