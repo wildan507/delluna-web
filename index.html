@@ -1166,6 +1166,28 @@ async function loadMitra(){
   renderMitra();
 }
 
+function onFilterDaerahChange() {
+  const daerahId = document.getElementById("filterDaerah").value;
+  const selectZona = document.getElementById("filterZona");
+
+  if (!daerahId) {
+    selectZona.innerHTML = `<option value="">Semua Zona</option>`;
+    selectZona.disabled = true;
+  } else {
+    selectZona.disabled = false;
+
+    const zonaFiltered = zones.filter(z => z.region_id == daerahId);
+
+    selectZona.innerHTML =
+      `<option value="">Semua Zona</option>` +
+      zonaFiltered.map(z =>
+        `<option value="${z.id}">${z.master_zones?.name || "-"}</option>`
+      ).join("");
+  }
+
+  loadMitra();
+}
+
 async function loadDistribusi(){
   const { data, error } = await sb
     .from("distributions")
