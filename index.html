@@ -732,54 +732,69 @@
 </div>
 
   <!-- ================= MITRA ================= -->
-  <div id="mitraTab" class="hidden">
-    <div class="card">
-      <h2>Master Mitra</h2>
+<div id="mitraTab" class="hidden">
+  <div class="card">
+    <h2>Master Mitra</h2>
 
-      <div class="row">
-        <input id="kodeMitra" placeholder="Kode mitra">
-        <input id="namaMitra" placeholder="Nama mitra">
-        <input id="namaToko" placeholder="Nama toko">
-        <select id="mitraDaerah" onchange="loadZonaByDaerah()"></select>
-        <select id="mitraZona"></select>
-        <input id="kecamatanMitra" placeholder="Kecamatan">
-        <input id="mapsMitra" placeholder="Link Google Maps">
-        <button class="btn-primary" onclick="tambahMitra()">Simpan</button>
-      </div>
-
-      <div class="row">
-        <button class="btn-info" onclick="resetVisitStatus()">Reset Status Bulanan</button>
-        <span class="badge">Klik ? semua mitra kembali ke "Belum"</span>
-      </div>
-
-      <div class="row">
-        <label>Status:</label>
-        <select id="filterVisit" onchange="loadMitra()">
-          <option value="">Semua</option>
-          <option value="sudah">Sudah</option>
-          <option value="belum">Belum</option>
-        </select>
-        <span class="badge">Filter cepat kunjungan</span>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Kode</th>
-            <th>Nama Mitra</th>
-            <th>Nama Toko</th>
-            <th>Daerah</th>
-            <th>Zona</th>
-            <th>Kecamatan</th>
-            <th>Maps</th>
-            <th>Status</th>
-            <th class="center">Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="mitraTable"></tbody>
-      </table>
+    <!-- INPUT MITRA -->
+    <div class="row">
+      <input id="kodeMitra" placeholder="Kode mitra">
+      <input id="namaMitra" placeholder="Nama mitra">
+      <input id="namaToko" placeholder="Nama toko">
+      <select id="mitraDaerah" onchange="loadZonaByDaerah()"></select>
+      <select id="mitraZona"></select>
+      <input id="kecamatanMitra" placeholder="Kecamatan">
+      <input id="mapsMitra" placeholder="Link Google Maps">
+      <button class="btn-primary" onclick="tambahMitra()">Simpan</button>
     </div>
+
+    <!-- RESET STATUS -->
+    <div class="row">
+      <button class="btn-info" onclick="resetVisitStatus()">Reset Status Bulanan</button>
+      <span class="badge">Klik → semua mitra kembali ke "Belum"</span>
+    </div>
+
+    <!-- FILTER -->
+    <div class="row">
+      <label>Status:</label>
+      <select id="filterVisit" onchange="loadMitra()">
+        <option value="">Semua</option>
+        <option value="sudah">Sudah</option>
+        <option value="belum">Belum</option>
+      </select>
+
+      <label>Daerah:</label>
+      <select id="filterDaerah" onchange="onFilterDaerahChange()">
+        <option value="">Semua Daerah</option>
+      </select>
+
+      <label>Zona:</label>
+      <select id="filterZona" disabled onchange="loadMitra()">
+        <option value="">Semua Zona</option>
+      </select>
+
+      <span class="badge">Filter mitra berdasarkan daerah & zona</span>
+    </div>
+
+    <!-- TABLE -->
+    <table>
+      <thead>
+        <tr>
+          <th>Kode</th>
+          <th>Nama Mitra</th>
+          <th>Nama Toko</th>
+          <th>Daerah</th>
+          <th>Zona</th>
+          <th>Kecamatan</th>
+          <th>Maps</th>
+          <th>Status</th>
+          <th class="center">Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="mitraTable"></tbody>
+    </table>
   </div>
+</div>
 
   <!-- ================= DISTRIBUSI ================= -->
   <div id="distribusiTab" class="hidden">
@@ -1069,6 +1084,7 @@ async function loadDaerah(){
   daerah = data || [];
   renderDaerah();
   renderSelectDaerahGlobal();
+  renderFilterDaerahMitra();
 }
 
 async function loadZones(){
@@ -1095,13 +1111,17 @@ async function loadZones(){
 
 /* ========= LOAD MITRA (PAGINATION + FILTER STATUS) ========= */
 async function loadMitra(){
+
   const statusFilter = document.getElementById("filterVisit")?.value || "";
+  const regionFilter = document.getElementById("filterDaerahMitra")?.value || "";
+  const zonaFilter   = document.getElementById("filterZonaMitra")?.value || "";
 
   let allData = [];
   let from = 0;
   const limit = 1000;
 
   while(true){
+
     let query = sb
       .from("partners")
       .select(`
@@ -1109,14 +1129,26 @@ async function loadMitra(){
         regions(name),
         zones(
           id,
+          region_id,
           master_zones(name)
         )
       `)
       .order("created_at", { ascending:false })
       .range(from, from + limit - 1);
 
+    // FILTER STATUS
     if(statusFilter){
       query = query.eq("visit_status", statusFilter);
+    }
+
+    // FILTER DAERAH
+    if(regionFilter){
+      query = query.eq("region_id", regionFilter);
+    }
+
+    // FILTER ZONA
+    if(zonaFilter){
+      query = query.eq("zone_id", zonaFilter);
     }
 
     const { data, error } = await query;
@@ -1126,6 +1158,7 @@ async function loadMitra(){
 
     allData = allData.concat(data);
     if(data.length < limit) break;
+
     from += limit;
   }
 
@@ -2191,9 +2224,18 @@ function renderZonaPerDaerah(){
     tbody.appendChild(tr);
   });
 }
+
 window.addEventListener("DOMContentLoaded", async () => {
+
+  // ===== MASTER =====
   await loadMasterZones();
   await loadZonaPerDaerah();
+  await loadDaerah();     // penting untuk dropdown filter & input
+  await loadZones();      // isi array zones global
+
+  // ===== MITRA =====
+  await loadMitra();      // load tabel pertama kali
+
 });
 
 /* ================= MITRA ================= */
@@ -2203,6 +2245,45 @@ function renderSelectMitraDaerah(){
     daerah.filter(d=>d.active).map(d => `<option value="${d.id}">${d.name}</option>`).join("");
 
   loadZonaByDaerah();
+}
+
+function renderFilterDaerahMitra(){
+  const sel = document.getElementById("filterDaerahMitra");
+
+  sel.innerHTML =
+    `<option value="">Semua Daerah</option>` +
+    daerah.map(d =>
+      `<option value="${d.id}">${d.name}</option>`
+    ).join("");
+}
+
+function onChangeFilterDaerahMitra(){
+  const regionId = document.getElementById("filterDaerahMitra").value;
+  const zonaSel = document.getElementById("filterZonaMitra");
+
+  if(!regionId){
+    zonaSel.innerHTML = `<option value="">Semua Zona</option>`;
+    zonaSel.disabled = true;
+    loadMitra();
+    return;
+  }
+
+  const list = zones.filter(z =>
+    String(z.region_id) === String(regionId) &&
+    z.active !== false
+  );
+
+  zonaSel.innerHTML =
+    `<option value="">Semua Zona</option>` +
+    list.map(z =>
+      `<option value="${z.id}">
+        ${z.master_zones?.name || "-"}
+      </option>`
+    ).join("");
+
+  zonaSel.disabled = false;
+
+  loadMitra();
 }
 
 function renderMitra(){
